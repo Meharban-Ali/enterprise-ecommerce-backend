@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+
+  # ─── SERVICE 1: MySQL Database ───────────────────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3307:3306"                 # Host port 3307 → Container port 3306
+    volumes:
+      - mysql_data:/var/lib/mysql   # Named volume for persistent data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 20s
+      retries: 10
+      start_period: 30s
+
+  # ─── SERVICE 2: Redis Cache ───────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine           # Alpine variant for minimal image size
+    container_name: redis_cache
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── SERVICE 3: Spring Boot Application ──────────────────────────────────────
+  app:
+    build: .
+    image: meharbancoder/ecommerce-app:v1.0
+    container_name: springboot_app
+    ports:
+      - "8085:8080"
+    environment:
+      # These environment variables override application.properties at runtime
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE}
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS}
+      JWT_REFRESH_EXPIRATION_MS: ${JWT_REFRESH_EXPIRATION_MS}
+    depends_on:
+      mysql:
+        condition: service_healthy  # Wait for MySQL healthcheck before starting app
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s             # Allow Spring Boot sufficient time to initialize
+    networks:
+      - app-network
+
+# ─── VOLUMES ─────────────────────────────────────────────────────────────────
+volumes:
+  mysql_data:                       # Persistent MySQL data volume
+
+# ─── NETWORKS ────────────────────────────────────────────────────────────────
+networks:
+  app-network:
+    driver: bridge                  # Private bridge network for inter-container communication

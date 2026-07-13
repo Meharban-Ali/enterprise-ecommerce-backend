@@ -1,0 +1,151 @@
+package com.redis.notification.entity;
+
+import com.redis.monitoring.service.SystemMonitoringService;
+import com.redis.notification.service.NotificationRetryService;
+
+import com.redis.infrastructure.config.NotificationProperties;
+import com.redis.notification.entity.Notification;
+import com.redis.notification.entity.NotificationStatus;
+import com.redis.reliability.dto.SchedulerStatusResponse;
+import com.redis.monitoring.event.MonitoringEvent;
+import com.redis.notification.repository.NotificationRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class NotificationRetryScheduler {
+
+    private final NotificationRepository notificationRepository;
+    private final NotificationRetryService retryService;
+    private final NotificationProperties notificationProperties;
+    private final ApplicationEventPublisher eventPublisher;
+
+    @Autowired
+    private ObjectProvider<SystemMonitoringService> monitoringServiceProvider;
+
+    private final AtomicLong executionCount = new AtomicLong(0);
+    private final AtomicLong failuresCount = new AtomicLong(0);
+    private final AtomicLong totalDurationMs = new AtomicLong(0);
+    private final AtomicReference<LocalDateTime> lastExecutionTime = new AtomicReference<>();
+    private final AtomicReference<LocalDateTime> lastFailureTime = new AtomicReference<>();
+    private final AtomicLong lastExecutionDurationMs = new AtomicLong(0);
+
+    // Sprint 9.1 metrics
+    private final AtomicLong minExecutionTimeMs = new AtomicLong(Long.MAX_VALUE);
+    private final AtomicLong maxExecutionTimeMs = new AtomicLong(0);
+    private final AtomicReference<LocalDateTime> lastSuccessfulExecution = new AtomicReference<>();
+    private final AtomicReference<LocalDateTime> lastFailedExecution = new AtomicReference<>();
+    private final AtomicLong totalProcessedRecords = new AtomicLong(0);
+
+    @Scheduled(fixedDelayString = "${app.notification.retry.scheduler-delay-ms:60000}")
+    public void processPendingRetries() {
+        long start = System.currentTimeMillis();
+        executionCount.incrementAndGet();
+        lastExecutionTime.set(LocalDateTime.now());
+        log.debug("NotificationRetryScheduler checking for retry candidates...");
+
+        boolean failed = false;
+        try {
+            LocalDateTime now = LocalDateTime.now();
+            int batchSize = notificationProperties.getRetry().getBatchSize();
+
+            List<Notification> candidates = notificationRepository.findTopRetryCandidates(
+                    NotificationStatus.FAILED,
+                    now,
+                    PageRequest.of(0, batchSize)
+            );
+
+            if (!candidates.isEmpty()) {
+                log.info("Found {} notification retry candidates.", candidates.size());
+                totalProcessedRecords.addAndGet(candidates.size());
+                for (Notification notification : candidates) {
+                    try {
+                        retryService.executeRetry(notification.getId());
+                    } catch (Exception e) {
+                        log.error("Failed to execute retry for notification ID: {}", notification.getId(), e);
+                        registerError(e);
+                    }
+                }
+            }
+            lastSuccessfulExecution.set(LocalDateTime.now());
+        } catch (Exception e) {
+            failed = true;
+            failuresCount.incrementAndGet();
+            lastFailureTime.set(LocalDateTime.now());
+            lastFailedExecution.set(LocalDateTime.now());
+            registerError(e);
+            eventPublisher.publishEvent(new MonitoringEvent(this, "SCHEDULER_FAILURE", "NotificationRetryScheduler", e.getMessage()));
+            throw e;
+        } finally {
+            long duration = System.currentTimeMillis() - start;
+            lastExecutionDurationMs.set(duration);
+            totalDurationMs.addAndGet(duration);
+            updateTimeStats(duration);
+            if (!failed) {
+                lastSuccessfulExecution.set(LocalDateTime.now());
+            }
+        }
+    }
+
+    private void updateTimeStats(long duration) {
+        minExecutionTimeMs.updateAndGet(val -> val == Long.MAX_VALUE ? duration : Math.min(val, duration));
+        maxExecutionTimeMs.updateAndGet(val -> Math.max(val, duration));
+    }
+
+    private void registerError(Throwable e) {
+        SystemMonitoringService service = monitoringServiceProvider.getIfAvailable();
+        if (service != null) {
+            service.registerError("NotificationRetryScheduler", e);
+        }
+    }
+
+    public SchedulerStatusResponse getStatusDetails() {
+        long runs = executionCount.get();
+        long fails = failuresCount.get();
+        double successRate = runs > 0 ? ((double) (runs - fails) / runs) * 100.0 : 100.0;
+        double avgTime = runs > 0 ? (double) totalDurationMs.get() / runs : 0.0;
+
+        String status = "IDLE";
+        if (lastExecutionTime.get() != null) {
+            if (lastExecutionTime.get().isAfter(LocalDateTime.now().minusMinutes(5))) {
+                status = "UP";
+            }
+        }
+        if (fails > 0 && lastFailureTime.get() != null && lastFailureTime.get().isAfter(LocalDateTime.now().minusMinutes(5))) {
+            status = "WARNING";
+        }
+
+        long minVal = minExecutionTimeMs.get();
+        return SchedulerStatusResponse.builder()
+                .schedulerName("NotificationRetryScheduler")
+                .lastExecutionTime(lastExecutionTime.get())
+                .lastExecutionDurationMs(lastExecutionDurationMs.get())
+                .averageExecutionTimeMs(avgTime)
+                .executionCount(runs)
+                .failuresCount(fails)
+                .successRate(successRate)
+                .lastFailureTime(lastFailureTime.get())
+                .status(status)
+                .minExecutionTimeMs(minVal == Long.MAX_VALUE ? 0L : minVal)
+                .maxExecutionTimeMs(maxExecutionTimeMs.get())
+                .lastSuccessfulExecution(lastSuccessfulExecution.get())
+                .lastFailedExecution(lastFailedExecution.get())
+                .successPercentage(successRate)
+                .failurePercentage(runs > 0 ? ((double) fails / runs) * 100.0 : 0.0)
+                .totalProcessedRecords(totalProcessedRecords.get())
+                .build();
+    }
+}

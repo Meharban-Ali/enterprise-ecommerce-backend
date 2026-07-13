@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome to E-Commerce</title>
+    <style>
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f8fafc; color: #1e293b; padding: 20px; }
+        .card { background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); padding: 40px; max-width: 600px; margin: 0 auto; }
+        h1 { color: #0f172a; font-size: 24px; font-weight: 700; margin-bottom: 20px; }
+        p { line-height: 1.6; margin-bottom: 20px; }
+        .footer { font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 40px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Welcome, <span th:text="${data.customerName}">User</span>!</h1>
+        <p>Thank you for registering. Your account has been successfully created.</p>
+        <p>Explore our products and let us know if we can help you with anything.</p>
+        <div class="footer">
+            <p>Best regards,<br><span th:text="${data.companyName}">E-Commerce Corp</span></p>
+            <p>Need support? Contact us at: <span th:text="${data.supportContact}">support@ecommerce.com</span></p>
+        </div>
+    </div>
+</body>
+</html>

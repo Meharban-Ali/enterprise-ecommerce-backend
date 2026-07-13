@@ -7,7 +7,7 @@ import org.springframework.cache.annotation.EnableCaching;
 
 @SpringBootApplication
 @EnableConfigurationProperties
-@EnableCaching  
+@EnableCaching
 public class EcommerceApplication {
 
 	public static void main(String[] args) {
