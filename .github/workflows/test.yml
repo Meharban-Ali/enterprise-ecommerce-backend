@@ -48,6 +48,9 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
+      - name: Grant Execute Permissions on Maven Wrapper
+        run: chmod +x mvnw
+
       - name: Run Test Suite
         env:
           SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/redisdb
