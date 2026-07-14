@@ -19,24 +19,6 @@ jobs:
     name: Run Unit and Integration Tests
     runs-on: ubuntu-latest
 
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: redisdb
-          MYSQL_USER: root
-          MYSQL_PASSWORD: root
-        ports:
-          - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
-
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: --health-cmd="redis-cli ping" --health-interval=10s --health-timeout=5s --health-retries=3
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -52,15 +34,6 @@ jobs:
         run: chmod +x mvnw
 
       - name: Run Test Suite
-        env:
-          SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/redisdb
-          SPRING_DATASOURCE_USERNAME: root
-          SPRING_DATASOURCE_PASSWORD: root
-          SPRING_REDIS_HOST: localhost
-          SPRING_REDIS_PORT: 6379
-          JWT_SECRET: GvKKCNVuXaT5o64h5uC4PHfzgzUOmPlLEMoYGSPL5MwV1Xr5IbBnR1L7g/5L9mGOsgDTIKkSQ8W4hY6pkooWfw==
-          JWT_EXPIRATION_MS: 1500000
-          JWT_REFRESH_EXPIRATION_MS: 604800000
         run: ./mvnw test
 
       - name: Upload Surefire Test Reports
