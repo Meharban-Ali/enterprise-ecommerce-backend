@@ -20,6 +20,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // Fast check for registration duplicate validation
     boolean existsByEmail(String email);
 
+    boolean existsByUsername(String username);
+
     // Checks if any user exists with the specified role
     boolean existsByRole(Role role);
 

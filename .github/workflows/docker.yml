@@ -1,0 +1,41 @@
+name: Docker Image Build Validation
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'release/*'
+      - 'hotfix/*'
+  pull_request:
+    branches:
+      - main
+      - develop
+      - 'release/*'
+      - 'hotfix/*'
+
+jobs:
+  docker-build:
+    name: Build and Verify Docker Container
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: actions/setup-buildx-action@v3
+
+      - name: Build Docker Image (No Registry Push)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          load: true
+          tags: meharbancoder/ecommerce-app:test-validation
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Verify Container Image Metadata
+        run: |
+          docker images | grep meharbancoder/ecommerce-app
+          docker inspect meharbancoder/ecommerce-app:test-validation

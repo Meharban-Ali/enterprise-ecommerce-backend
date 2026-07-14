@@ -33,6 +33,10 @@ public class DataInitializer implements CommandLineRunner {
     private final AlertRuleRepository alertRuleRepository;
     private final PasswordEncoder passwordEncoder;
     private final DataInitializerProperties properties;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.redis.audit.event.AuditEventPublisher auditEventPublisher;
 
     @Override
     public void run(String... args) {
@@ -41,7 +45,7 @@ public class DataInitializer implements CommandLineRunner {
         try {
             initializeSuperAdmin();
         } catch (Exception ex) {
-            log.error("Failed to seed default Super Admin on startup: {}", ex.getMessage(), ex);
+            log.error("Failed to execute secure Super Admin bootstrap: {}", ex.getMessage());
         }
 
         try {
@@ -65,23 +69,120 @@ public class DataInitializer implements CommandLineRunner {
 
     @Transactional
     public void initializeSuperAdmin() {
-        if (!userRepository.existsByRole(Role.ROLE_SUPER_ADMIN)) {
-            log.info("ROLE_SUPER_ADMIN does not exist — seeding default Super Admin account...");
-            
-            User superAdmin = User.builder()
-                    .username("superadmin")
-                    .email("superadmin@ecommerce.local")
-                    .password(passwordEncoder.encode("ChangeMe@123"))
-                    .role(Role.ROLE_SUPER_ADMIN)
-                    .accountEnabled(true)
-                    .accountNonLocked(true)
-                    .build();
-            
-            userRepository.save(superAdmin);
-            log.info("Default Super Admin seeded successfully: superadmin@ecommerce.local");
-        } else {
-            log.debug("ROLE_SUPER_ADMIN already exists — skipping default Super Admin seeding");
+        if (isBootstrapCompleted() || userRepository.existsByRole(Role.ROLE_SUPER_ADMIN)) {
+            log.debug("IDENTITY_BOOTSTRAP | Bootstrap lock active or SUPER_ADMIN role already exists. Skipping bootstrap.");
+            return;
         }
+
+        String name = getEnv("SUPER_ADMIN_NAME");
+        String email = getEnv("SUPER_ADMIN_EMAIL");
+        String password = getEnv("SUPER_ADMIN_PASSWORD");
+        String phone = getEnv("SUPER_ADMIN_PHONE");
+
+        if (name == null || name.isBlank() ||
+            email == null || email.isBlank() ||
+            password == null || password.isBlank() ||
+            phone == null || phone.isBlank()) {
+            log.warn("IDENTITY_BOOTSTRAP | Skipping bootstrap - super admin credentials environment variables not set.");
+            return;
+        }
+
+        log.info("IDENTITY_BOOTSTRAP | Starting secure Super Admin identity bootstrap process...");
+        publishAudit(null, email, com.redis.audit.entity.AuditActionType.IDENTITY_BOOTSTRAP_STARTED, com.redis.audit.entity.AuditStatus.SUCCESS, "Bootstrap Started");
+
+        // Validations
+        if (!email.matches("^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+$")) {
+            failBootstrap(email, "Invalid email format");
+        }
+
+        boolean isStrong = password.length() >= 12 &&
+                           password.matches(".*[A-Z].*") &&
+                           password.matches(".*[a-z].*") &&
+                           password.matches(".*[0-9].*") &&
+                           password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\",./<>?\\\\|].*");
+
+        if (!isStrong) {
+            failBootstrap(email, "Password does not meet complexity requirements (min 12 chars, upper, lower, digit, special)");
+        }
+
+        if (!phone.matches("^\\+?[1-9]\\d{1,14}$")) {
+            failBootstrap(email, "Invalid phone format");
+        }
+
+        if (userRepository.existsByEmail(email)) {
+            failBootstrap(email, "Duplicate email");
+        }
+
+        if (userRepository.existsByUsername(name)) {
+            failBootstrap(email, "Duplicate username");
+        }
+
+        User superAdmin = User.builder()
+                .username(name)
+                .email(email)
+                .password(passwordEncoder.encode(password))
+                .phone(phone)
+                .role(Role.ROLE_SUPER_ADMIN)
+                .accountEnabled(true)
+                .accountNonLocked(true)
+                .passwordChangeRequired(true)
+                .build();
+
+        userRepository.save(superAdmin);
+
+        markBootstrapCompleted();
+
+        log.info("IDENTITY_BOOTSTRAP | Super Admin identity bootstrap completed successfully.");
+        publishAudit(superAdmin.getId(), email, com.redis.audit.entity.AuditActionType.IDENTITY_BOOTSTRAP_COMPLETED, com.redis.audit.entity.AuditStatus.SUCCESS, "Bootstrap Completed");
+    }
+
+    private boolean isBootstrapCompleted() {
+        try {
+            Integer count = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM system_settings WHERE setting_key = 'bootstrap.completed' AND setting_value = 'true'",
+                    Integer.class
+            );
+            return count != null && count > 0;
+        } catch (Exception e) {
+            log.warn("IDENTITY_BOOTSTRAP | Failed to query system_settings table. It might not be created yet: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    private void markBootstrapCompleted() {
+        try {
+            jdbcTemplate.update(
+                    "INSERT INTO system_settings (setting_key, setting_value) VALUES ('bootstrap.completed', 'true')"
+            );
+            log.info("IDENTITY_BOOTSTRAP | Bootstrap state permanently locked in system_settings table.");
+        } catch (Exception e) {
+            log.error("IDENTITY_BOOTSTRAP | Failed to persist bootstrap state in system_settings: {}", e.getMessage());
+            throw new RuntimeException("Bootstrap state lock failed", e);
+        }
+    }
+
+    private void publishAudit(Long userId, String email, com.redis.audit.entity.AuditActionType action, com.redis.audit.entity.AuditStatus status, String desc) {
+        if (auditEventPublisher != null) {
+            try {
+                String version = "v1.0.0";
+                String host;
+                try {
+                    host = java.net.InetAddress.getLocalHost().getHostName();
+                } catch (Exception ex) {
+                    host = "unknown";
+                }
+                String env = System.getProperty("spring.profiles.active", "prod");
+                String fullDesc = String.format("%s | Version: %s | Host: %s | Env: %s", desc, version, host, env);
+                auditEventPublisher.publish(userId, email, action, status, com.redis.common.entity.ResourceType.USER, userId != null ? String.valueOf(userId) : "0", fullDesc);
+            } catch (Exception e) {
+                log.error("Failed to publish audit event for identity bootstrap: {}", e.getMessage());
+            }
+        }
+    }
+
+    private void failBootstrap(String email, String reason) {
+        publishAudit(null, email, com.redis.audit.entity.AuditActionType.IDENTITY_BOOTSTRAP_FAILED, com.redis.audit.entity.AuditStatus.FAILED, "Bootstrap Failed: " + reason);
+        throw new IllegalArgumentException("Identity Bootstrap failed: " + reason);
     }
 
     @Transactional
@@ -163,5 +264,9 @@ public class DataInitializer implements CommandLineRunner {
                         .stockQuantity(75)
                         .build()
         );
+    }
+
+    protected String getEnv(String name) {
+        return System.getenv(name);
     }
 }

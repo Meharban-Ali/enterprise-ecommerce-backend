@@ -19,8 +19,10 @@ FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
 
-# Create a non-root system user/group for security best practices
-RUN addgroup -S spring && adduser -S spring -G spring
+# Install curl for healthchecks and create non-root user/group
+RUN apk add --no-cache curl && \
+    addgroup -S spring && \
+    adduser -S spring -G spring
 
 COPY --from=build /app/target/*.jar app.jar
 
@@ -30,4 +32,4 @@ USER spring
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75.0", "-XX:InitialRAMPercentage=50.0", "-XX:+UseG1GC", "-XX:+ExitOnOutOfMemoryError", "-Djava.security.egd=file:/dev/./urandom", "-Dfile.encoding=UTF-8", "-Duser.timezone=UTC", "-jar", "app.jar"]

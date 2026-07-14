@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -51,6 +52,7 @@ public class NotificationOutboxScheduler {
     private final AtomicLong totalProcessedRecords = new AtomicLong(0);
 
     @Scheduled(fixedDelayString = "${app.notification.outbox-delay-ms:2000}")
+    @SchedulerLock(name = "NotificationOutboxScheduler_processOutbox", lockAtMostFor = "1m", lockAtLeastFor = "1s")
     public void processOutbox() {
         long start = System.currentTimeMillis();
         executionCount.incrementAndGet();

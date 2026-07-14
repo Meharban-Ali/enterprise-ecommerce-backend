@@ -78,6 +78,7 @@ public class ResetPasswordServiceImpl implements ResetPasswordService {
 
         // Encrypt new password using PasswordEncoder
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setPasswordChangeRequired(false);
         userRepository.save(user);
 
         log.info("Password reset successfully for user ID: {}", user.getId());

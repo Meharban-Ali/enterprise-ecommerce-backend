@@ -71,6 +71,13 @@ public class User extends AuditableEntity implements UserDetails, java.io.Serial
     @Column(name = "account_non_locked", nullable = false)
     private boolean accountNonLocked = true;
 
+    @Builder.Default
+    @Column(name = "password_change_required", nullable = false)
+    private boolean passwordChangeRequired = false;
+
+    @Column(name = "phone", length = 20)
+    private String phone;
+
     // ─── Security Question Fields ────────────────────────────────────────────────
     @Column(name = "security_question", length = 255)
     private String securityQuestion;

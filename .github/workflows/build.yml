@@ -1,0 +1,45 @@
+name: Java Build Validation
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'release/*'
+      - 'hotfix/*'
+      - 'feature/*'
+  pull_request:
+    branches:
+      - main
+      - develop
+      - 'release/*'
+      - 'hotfix/*'
+
+jobs:
+  build:
+    name: Compile and Package JAR
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Compile Source Code
+        run: ./mvnw clean compile
+
+      - name: Package Application JAR
+        run: ./mvnw package -DskipTests
+
+      - name: Upload Packaged Jar Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ecommerce-app-jar
+          path: target/*.jar
+          retention-days: 7

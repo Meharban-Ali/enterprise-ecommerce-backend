@@ -1,0 +1,77 @@
+name: Production Release Workflow
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: Build, Package, and Draft Release
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: redisdb
+          MYSQL_USER: root
+          MYSQL_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: --health-cmd="redis-cli ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Run Test Suite
+        env:
+          SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/redisdb
+          SPRING_DATASOURCE_USERNAME: root
+          SPRING_DATASOURCE_PASSWORD: root
+          SPRING_REDIS_HOST: localhost
+          SPRING_REDIS_PORT: 6379
+          JWT_SECRET: GvKKCNVuXaT5o64h5uC4PHfzgzUOmPlLEMoYGSPL5MwV1Xr5IbBnR1L7g/5L9mGOsgDTIKkSQ8W4hY6pkooWfw==
+          JWT_EXPIRATION_MS: 1500000
+          JWT_REFRESH_EXPIRATION_MS: 604800000
+        run: ./mvnw test
+
+      - name: Package Release JAR
+        run: ./mvnw package -DskipTests
+
+      - name: Set up Docker Buildx
+        uses: actions/setup-buildx-action@v3
+
+      - name: Build Docker Release Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          load: true
+          tags: meharbancoder/ecommerce-app:${{ github.ref_name }}
+          cache-from: type=gha
+
+      - name: Create GitHub Release Draft
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          draft: true
+          files: |
+            target/*.jar
+            CHANGELOG.md
+            LICENSE

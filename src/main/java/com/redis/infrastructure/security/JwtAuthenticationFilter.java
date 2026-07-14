@@ -101,6 +101,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                     log.debug("User authenticated successfully via JWT: {}", userEmail);
 
+                    // First-login password change required flow
+                    if (userDetails instanceof User) {
+                        User user = (User) userDetails;
+                        String uri = request.getRequestURI();
+                        if (user.isPasswordChangeRequired() && !uri.endsWith("/api/auth/reset-password") && !uri.endsWith("/api/auth/logout")) {
+                            log.warn("Access denied for user {}: password change required", userEmail);
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"message\":\"Password change required on first login\",\"code\":\"PASSWORD_CHANGE_REQUIRED\"}");
+                            response.getWriter().flush();
+                            return;
+                        }
+                    }
+
                     // Update user session activity in DB and Redis
                     if (userDetails instanceof User) {
                         UserSessionService sessionService = userSessionServiceProvider.getIfAvailable();
