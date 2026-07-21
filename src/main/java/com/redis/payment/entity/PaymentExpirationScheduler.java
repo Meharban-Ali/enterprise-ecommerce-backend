@@ -34,6 +34,7 @@ public class PaymentExpirationScheduler {
     private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
     private final OrderService orderService;
+    private final com.redis.payment.service.PaymentService paymentService;
     private final ApplicationEventPublisher eventPublisher;
 
     @Autowired
@@ -54,7 +55,6 @@ public class PaymentExpirationScheduler {
     private final AtomicLong totalProcessedRecords = new AtomicLong(0);
 
     @Scheduled(cron = "0 */1 * * * *")
-    @Transactional
     public void expirePendingPayments() {
         long start = System.currentTimeMillis();
         executionCount.incrementAndGet();
@@ -81,15 +81,7 @@ public class PaymentExpirationScheduler {
 
             for (Order order : expiredOrders) {
                 try {
-                    orderService.expireOrder(order.getId());
-                    Optional<Payment> paymentOpt = paymentRepository.findByOrderId(order.getId());
-                    if (paymentOpt.isPresent()) {
-                        Payment payment = paymentOpt.get();
-                        if (payment.getStatus() == PaymentStatus.PENDING) {
-                            payment.setStatus(PaymentStatus.FAILED);
-                            paymentRepository.save(payment);
-                        }
-                    }
+                    paymentService.expirePendingPaymentForOrder(order);
                     log.info("Expired order ID {} successfully processed.", order.getId());
                 } catch (Exception e) {
                     log.error("Error processing expiration for order ID {}: {}", order.getId(), e.getMessage(), e);

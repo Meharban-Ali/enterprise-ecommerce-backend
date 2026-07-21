@@ -166,17 +166,23 @@ public class OrderServiceImpl implements OrderService {
         log.info("Expiring payment timeout for order ID: {}", orderId);
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found with ID: " + orderId));
+        expireOrder(order);
+    }
 
+    @Override
+    @Transactional
+    public void expireOrder(Order order) {
+        if (order == null) return;
         if (order.getStatus() == OrderStatus.PENDING_PAYMENT) {
             order.setStatus(OrderStatus.EXPIRED);
             inventoryReservationService.releaseReservation(order);
             orderRepository.save(order);
-            log.info("Order transitioned to EXPIRED and reservation released — ID: {}", orderId);
+            log.info("Order transitioned to EXPIRED and reservation released — ID: {}", order.getId());
 
             try {
                 notificationEventPublisher.publishOrderExpired(order.getUser().getId(), order.getId());
             } catch (Exception e) {
-                log.error("Failed to publish order expired event for order ID: {}", orderId, e);
+                log.error("Failed to publish order expired event for order ID: {}", order.getId(), e);
             }
         }
     }

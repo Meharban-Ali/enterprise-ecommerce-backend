@@ -36,6 +36,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public RegisterResponse registerUser(RegisterRequest request) {
+        log.info("Registration started for username: {}, email: {}", request.getUsername(), request.getEmail());
         log.info("Processing user registration");
 
         // 1. Check if user already exists
@@ -70,6 +71,7 @@ public class UserServiceImpl implements UserService {
         // 4. Persist entity
         User savedUser = userRepository.save(user);
         log.info("User registered successfully — ID: {}", savedUser.getId());
+        log.info("User saved: ID={}, email={}", savedUser.getId(), savedUser.getEmail());
 
         if (auditEventPublisher != null) {
             auditEventPublisher.publish(savedUser.getId(), savedUser.getEmail(), com.redis.audit.entity.AuditActionType.REGISTER, com.redis.audit.entity.AuditStatus.SUCCESS,
@@ -78,10 +80,13 @@ public class UserServiceImpl implements UserService {
 
         // Publish welcome event
         try {
+            log.info("Welcome email triggered for user ID: {}, email: {}", savedUser.getId(), savedUser.getEmail());
             notificationEventPublisher.publishWelcome(savedUser.getId(), savedUser.getEmail());
         } catch (Exception e) {
             log.error("Failed to publish welcome event for user ID: {}", savedUser.getId(), e);
         }
+
+        log.info("Registration completed: ID={}, email={}", savedUser.getId(), savedUser.getEmail());
 
         // 5. Return formatted response DTO
         return RegisterResponse.builder()

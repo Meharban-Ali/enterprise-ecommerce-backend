@@ -1,265 +1,177 @@
 # Enterprise Spring Boot eCommerce Backend Platform
 
-[![Build Status](https://img.shields.io/badge/Build-Success-brightgreen)](https://github.com/myorg/ecommerce)
+[![Build Status](https://img.shields.io/badge/Build-Success-brightgreen)](https://github.com/Meharban-Ali/eCommerce-Application)
 [![Java Version](https://img.shields.io/badge/Java-17-blue)](https://openjdk.org/projects/jdk/17)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-red)](https://spring.io/projects/spring-boot)
-[![Documentation Coverage](https://img.shields.io/badge/Documentation-100%25-brightgreen)](docs/README.md)
-[![Testing Coverage](https://img.shields.io/badge/Testing%20Coverage-100%25-brightgreen)](docs/06_Testing_Guide.md)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2-red)](https://spring.io/projects/spring-boot)
+[![Database](https://img.shields.io/badge/MySQL-8.0-orange)](https://www.mysql.com/)
+[![Caching](https://img.shields.io/badge/Redis-7.0-darkred)](https://redis.io/)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-This repository hosts a production-grade, highly secure, and decoupled eCommerce core backend engine. Designed around Domain-Driven Design (DDD) boundaries and Clean Architecture principles, the platform provides scalable services for user identity, shopping cart management, inventory verification under race conditions, transactional checkouts, outbox notification logging, and dynamic observability controls.
-
----
-
-## Table of Contents
-1. [Project Overview](#section-1---project-overview)
-2. [Project Snapshot](#section-2---project-snapshot)
-3. [Tech Stack Selection](#section-3---tech-stack-selection)
-4. [System Architecture](#section-4---system-architecture)
-5. [Project Modules](#section-5---project-modules)
-6. [Feature Implementation](#section-6---feature-implementation)
-7. [Security Features](#section-7---security-features)
-8. [Database Design](#section-8---database-design)
-9. [Redis Implementation](#section-9---redis-implementation)
-10. [Background Processing](#section-10---background-processing)
-11. [Observability](#section-11---observability)
-12. [Reliability](#section-12---reliability)
-13. [API Overview](#section-13---api-overview)
-14. [Project Structure](#section-14---project-structure)
-15. [Current Project Status](#section-15---current-project-status)
-16. [Future Roadmap](#section-16---future-roadmap)
-17. [Project Statistics](#section-17---project-statistics)
-18. [Developer Onboarding](#section-18---developer-onboarding)
-19. [Document References](#section-19---document-references)
-20. [Final Quality Review](#section-20---final-quality-review)
+A production-grade, highly secure, and optimized eCommerce REST API platform built with Spring Boot 3, Redis, and MySQL. The system is designed following clean architecture principles and domain-driven design boundary practices. It provides high-performance, stateless authentication, safe concurrent checkouts, outbox-pattern notification logs, rate limiting, and out-of-the-box observability features.
 
 ---
 
-## Section 1 - Project Overview
-* **Purpose**: To provide a highly resilient and modular backend for high-volume retail eCommerce transactions.
-* **Business Goal**: Ensure zero inventory oversells during promotion spikes, guarantee 100% notification delivery, and verify payments securely.
-* **Real-World Problem**: Double checkouts under high-concurrency request loads, lost order notifications, and insecure payment webhook callback spoofing.
-* **Solution**: Implementing Hibernate version-based optimistic locking, transactional outbox log schedulers, cryptographic HMAC SHA-256 webhook validations, and rate-limiting IP lockout filters.
+## 1. Architecture Overview
 
----
+The system architecture utilizes a layered REST model with asynchronous event dispatches and caching boundaries:
 
-## Section 2 - Project Snapshot
-* **Project Version**: `1.0.0-RC1`
-* **Java Version**: JDK 17
-* **Spring Boot**: 3.x
-* **Database**: MySQL 8.x (fallback to in-memory H2 database locally)
-* **Caching**: Redis 7.x
-* **Security**: Spring Security 6.x, JWT
-* **Build Tool**: Apache Maven 3.8+
-* **Unit Testing**: JUnit 5, Mockito
-* **Staged Readiness Score**: **94.75%**
-
----
-
-## Section 3 - Tech Stack Selection
-
-| Technology | Purpose | Why Selected | Alternative Considered | Business Benefit |
-| :--- | :--- | :--- | :--- | :--- |
-| **Java 17** | Core runtime | Modern language features (records, text blocks), LTS support. | Node.js / Go | Strong type safety and enterprise garbage collectors optimization. |
-| **Spring Boot 3.x**| Framework | Autoconfiguration, actuator monitors, fast startup. | Quarkus / Micronaut | Massive ecosystem and developer pool availability. |
-| **MySQL 8.x** | Persistent DB | ACID transactions compliance, reliable indexing. | PostgreSQL | Standard relational platform compatible with HikariCP. |
-| **Redis 7.x** | Caching | In-memory key-value cache, fast read queries speed. | Memcached | High speed lookup for product detail queries. |
-| **Docker** | Containerization | Isolated deployment environment packaging. | Bare Metal | Identical runtime environment across staging/production. |
-
----
-
-## Section 4 - System Architecture
-
-### 1. Request Filtering Sequence
-```mermaid
-graph TD
-    Client[Client Request] --> RateLimit[RateLimitingFilter - locks spammers]
-    RateLimit --> JwtFilter[JwtAuthenticationFilter - verifies signature]
-    JwtFilter --> UserDetails[UserDetailsServiceImpl - checks database status]
-    UserDetails --> Context[SecurityContextHolder - injects auth context]
+```text
++-----------------------------------------------------------------------+
+|                              CLIENT                                   |
++----------------------------------+------------------------------------+
+                                   | HTTP Request
+                                   v
++----------------------------------+------------------------------------+
+|                      SPRING SECURITY FILTER CHAIN                     |
+|  - RateLimitingFilter (Redis Buckets)                                 |
+|  - JwtAuthenticationFilter (Token Signature Check)                    |
+|  - ApiKeyAuthenticationFilter (Admin X-API-Key SHA-256 Hash)          |
++----------------------------------+------------------------------------+
+                                   | Authenticated Context
+                                   v
++----------------------------------+------------------------------------+
+|                       CONTROLLERS LAYER                               |
+|  - DTO Jakarta Validations  - Global Exceptions Sanitizer             |
++----------------------------------+------------------------------------+
+                                   | Service Method Call
+                                   v
++----------------------------------+------------------------------------+
+|                         SERVICES LAYER                                |
+|  - Business Rules  - Transaction Boundaries  - Idempotency Locks     |
++----------------------------------+------------------------------------+
+                                   | Data Operations
+                                   v
++----------------------------------+------------------------------------+
+|                      REPOSITORIES LAYER                               |
+|  - JPA/Hibernate 6 ORM  - Version-based Optimistic Locking           |
++---------------------+------------+------------+-----------------------+
+                      |                         |
+                      v SQL                     v Redis command
++---------------------+------------+  +---------+-----------------------+
+|  PERSISTENCE STORAGE (MySQL 8)   |  | HIGH-SPEED CACHE (Redis)      |
+|  - Users, Orders, Webhooks tables|  | - Token Blacklist             |
+|  - Outbox Notification Logs      |  | - Products & API Keys Cache   |
++----------------------------------+  +-------------------------------+
 ```
 
-### 2. Transactional Order Checkout Flow
-```mermaid
-graph TD
-    OrderController --> OrderService[OrderService]
-    OrderService --> LockStock[ProductRepository - Optimistic version check]
-    LockStock -- Success --> SaveOrder[OrderRepository - Save state PENDING]
-    SaveOrder --> SaveOutbox[OutboxRepository - Create Notification Log]
-    SaveOutbox --> Commit[Transaction Commit]
-    Commit --> PublishEvent[Local Event Bus - OrderPlacedEvent]
-```
+For comprehensive architectural specifications and module layouts, refer to the [PROJECT_DOCUMENTATION.md](docs/PROJECT_DOCUMENTATION.md).
 
 ---
 
-## Section 5 - Project Modules
+## 2. Key Features
 
-### 1. Authentication (`com.redis.auth`)
-* **Purpose**: User registration, login credentials verification, JWT generation and token renewals.
-* **Important Classes**: `AuthController.java`, `RefreshTokenService.java`, `JwtService.java`.
-
-### 2. Product Catalog (`com.redis.product`)
-* **Purpose**: Product details query, substring search, caching demotions.
-* **Important Classes**: `ProductController.java`, `ProductService.java`, `ProductRepository.java`.
-
----
-
-## Section 6 - Feature Implementation
-
-### 1. Versioned Optimistic Locking
-* **Purpose**: Prevent concurrent database updates from double-decrementing inventory stock counts.
-* **Implementation**: Mapped `@Version` column on the `Product` entity. Conflicts raise `OptimisticLockingFailureException` preventing dirty updates.
-* **Important Classes**: `Product.java`.
-
-### 2. Transactional Outbox Pattern
-* **Purpose**: Guarantees that business actions (order checkouts) and notifications (email sends) succeed or fail together.
-* **Implementation**: Writes pending mail details to the database outbox log in the same transaction block as the order save. Schedulers query and process them asynchronously.
+* **Secure Authentication**: Stateless session authentication utilizing HMAC-SHA512 JWTs, database-stored Refresh Tokens, and high-speed Redis-based logout blacklists.
+* **Optimistic Locking**: Hibernate version-based concurrency checks on the `Product` entity (`@Version` column) to guarantee zero stock oversells during traffic spikes.
+* **Transactional Outbox Pattern**: Order placements and email/SMS notification dispatches are recorded in a single transaction block. Schedulers process and dispatch outbox notifications asynchronously.
+* **API Hardening**: Custom IP/User rate limiters, `@Lob` payload mapping removals, idempotency status check filters, and SHA-256 hashed API keys for admin integrations.
+* **Flyway Migrations**: Production-ready schema versions fully integrated and tracked.
+* **Dockerized Composition**: Private network bridge configurations separating database instances, cache stores, and container JRE alpine environments.
 
 ---
 
-## Section 7 - Security Features
-* **JWT token**: Access token signed with HS256 algorithm (expires in 25 minutes).
-* **Refresh Token**: Stored in MySQL database with a 7-day TTL expiration check.
-* **Rate Limiting**: Custom filters rate limit auth routes to 10 requests/minute per client IP.
-* **API Key rotation**: Administrative endpoints require valid `X-API-Key` headers.
+## 3. Tech Stack
+
+* **Core Framework**: Spring Boot 3.2.0, Spring Security 6.2, Spring Data JPA
+* **Persistent DB**: MySQL 8.0 (H2 in-memory compatibility mode used in testing)
+* **High-Speed Cache**: Redis 7.x
+* **Database Migrations**: Flyway DB Migration 9.22
+* **Build Wrapper**: Maven 3.8+ (mvnw wrapper included)
+* **Testing Libraries**: JUnit 5, Mockito, AssertJ
+* **Documentation**: OpenAPI 3.0 / Swagger UI
 
 ---
 
-## Section 8 - Database Design
+## 4. Environment Variables Required
 
-```mermaid
-erDiagram
-    USERS ||--o{ REFRESH_TOKENS : "has"
-    USERS ||--o{ ORDERS : "places"
-    ORDERS ||--|{ ORDER_ITEMS : "contains"
-    PRODUCTS ||--o{ ORDER_ITEMS : "ordered_in"
-```
+Create a `.env` file in the root directory (based on [`.env.example`](.env.example)):
 
-* **Indexes**: Mapped on `users.email` (`idx_users_email`) and `refresh_tokens.token` (`idx_refresh_tokens_token`).
-* **Auditing**: Extends `AuditableEntity` using Spring JPA Auditing to automatically inject created/updated timestamps.
+```properties
+SPRING_PROFILES_ACTIVE=dev
 
----
+# MySQL Database Parameters
+SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/redisdb
+SPRING_DATASOURCE_USERNAME=root
+SPRING_DATASOURCE_PASSWORD=your_mysql_password
 
-## Section 9 - Redis Implementation
-* **Product Detail Cache**: Catalog read requests use caching annotations (`@Cacheable`). Keys format: `products::<id>`.
-* **Token Blacklist**: Logged out JWT tokens are written to Redis with a TTL matching the token's remaining lifespan.
-* **Fail-Open Manager**: Custom cache manager intercepts connection timeouts and falls back to direct DB execution.
+# Redis Parameters
+SPRING_REDIS_HOST=localhost
+SPRING_REDIS_PORT=6379
 
----
+# JavaMailSender SMTP Parameters
+SMTP_HOST=smtp.yourprovider.com
+SMTP_PORT=587
+SMTP_USERNAME=supportecommerces@gmail.com
+SMTP_PASSWORD=your_smtp_app_password
 
-## Section 10 - Background Processing
-* **NotificationOutboxScheduler**: Runs every 10 seconds to query pending outbox records and dispatch emails.
-* **NotificationRetryScheduler**: Runs every 60 seconds to retry failed notifications with backoff delays.
-* **DatabaseBackupScheduler**: Runs periodic cron schedules to trigger database backups, compress zip files, and compute SHA-256 checksum verifications.
-
----
-
-## Section 11 - Observability
-* **Trace correlation**: Request filters UUID variables are propagated into the MDC map.
-* **Slow Query Aspect**: AOP Aspect intercepts service methods execution. Method execution times > 500ms trigger Warning logs.
-
----
-
-## Section 12 - Reliability
-* **Resilient Connections**: Tomcat connection body size limits and HikariCP connection pool configurations prevent resource exhaustion.
-* **Backup Audits**: Backup archives validation checks.
-* **Cache Fault Fallbacks**: Spring templates bypass cache queries on Redis downtime.
-
----
-
-## Section 13 - API Overview
-
-| REST Controllers | Total Mapped APIs | Public APIs | Authenticated APIs | Admin APIs |
-| :---: | :---: | :---: | :---: | :---: |
-| **22** | **130** | **37** | **93** | **28** |
-
-*Note: For the exhaustive REST endpoint reference directory, see [docs/03_API_Documentation.md](docs/03_API_Documentation.md).*
-
----
-
-## Section 14 - Project Structure
-```
-D:/Meharban_Code/ecommerce
-├── pom.xml (Maven Configuration)
-├── Dockerfile (Multi-stage build packaging)
-├── Docker-compose.yaml (Orchestration profiles)
-├── README.md (This handbook portal)
-├── docs/ (Clean official project guides)
-│   ├── README.md (Linked Portal index)
-│   ├── 01_Architecture.md
-│   ├── 02_Development_Guide.md
-│   ├── 03_API_Documentation.md
-│   ├── 04_Database_Documentation.md
-│   ├── 05_Deployment_Guide.md
-│   ├── 06_Testing_Guide.md
-│   ├── 07_Monitoring_Guide.md
-│   ├── 08_Troubleshooting_Guide.md
-│   ├── 09_Contributing_Guide.md
-│   └── 10_Changelog.md
-├── reports/ (Complete master audit reports)
-└── postman/ (Import-ready Postman collection JSONs)
+# Cryptographic Keys
+JWT_SECRET=your_base64_encoded_512_bit_jwt_signing_key
+SUPER_ADMIN_PASSWORD=your_complex_bootstrap_password
 ```
 
 ---
 
-## Section 15 - Current Project Status
-* **Current Version**: `1.0.0-RC1`
-* **Test Status**: **100% Success** (355/355 unit and integration tests pass successfully).
-* **Known Limitations**:
-  * **ShedLock**: Currently not implemented. Schedulers lack distributed locks, preventing safe multi-node container scaling.
-  * **Flyway**: Database schema updates rely on Hibernate `ddl-auto=update` settings, not SQL versioning migrations.
+## 5. Local Setup & Execution
+
+### Prerequisites
+* Java 17 JDK installed
+* MySQL 8.0 running (with database `redisdb` created)
+* Redis server running
+
+### Steps
+1. Clone the repository.
+2. Configure your local settings inside `.env`.
+3. Compile and verify the project (executes all 360 tests):
+   ```bash
+   ./mvnw clean verify
+   ```
+4. Boot the application:
+   ```bash
+   ./mvnw spring-boot:run
+   ```
+   The backend will be available at `http://localhost:8090`.
 
 ---
 
-## Section 16 - Future Roadmap
-* **Clustered Schedulers Lock (ShedLock)**: To be implemented in Sprint 11.4 to support container replicas scaling.
-* **Flyway Database version control**: Add Flyway dependency and migration SQL scripts to pom.xml.
-* **OAuth2 Keycloak/Okta SSO**: Support central identity server provider bindings.
-* **Apache Kafka**: Decouple outbox event publishing from the local JVM memory bus.
+## 6. Running with Docker Compose
+
+To boot the entire multi-service stack (Spring Boot app + MySQL + Redis) instantly:
+
+1. Build the multi-stage Docker image:
+   ```bash
+   docker compose build
+   ```
+2. Start the services:
+   ```bash
+   docker compose up -d
+   ```
+   * MySQL exposes port `3307` externally to prevent local port conflicts.
+   * Redis runs inside the container network on port `6379`.
+   * The Spring Boot app exposes Tomcat externally on port `8085`.
 
 ---
 
-## Section 17 - Project Statistics
-* **Packages**: 127
-* **Java Source Files**: 427
-* **Controllers**: 25
-* **Services**: 98
-* **Repositories**: 31
-* **Configurations**: 19
-* **Tests**: 355
+## 7. API Reference Documentation
+
+Complete endpoint documentation (request payloads, headers, auth status, status codes, and error formats) is cataloged inside the [POSTMAN_API_GUIDE.md](docs/POSTMAN_API_GUIDE.md).
 
 ---
 
-## Section 18 - Developer Onboarding
+## 8. Screenshots Section (Placeholder)
 
-### 1. Local execution
-To spin up the platform quickly using an in-memory database and mock caches:
-```bash
-mvn clean compile test
-mvn spring-boot:run -Dspring.profiles.active=local-h2
-```
-
-### 2. Dev Profile execution
-To launch dev configuration using a local Docker MySQL database and Redis server:
-```bash
-docker-compose up -d
-mvn spring-boot:run -Dspring.profiles.active=dev
-```
+> [!NOTE]
+> System UI mockups, database schemas, and metrics dashboards will be uploaded here.
 
 ---
 
-## Section 19 - Document References
-* **[01. System Architecture](docs/01_Architecture.md)**: Architectural layered design details.
-* **[02. Developer Onboarding](docs/02_Development_Guide.md)**: Workspace setups guidelines.
-* **[03. REST API Reference](docs/03_API_Documentation.md)**: REST endpoints mappings list.
-* **[04. Database ER Layout](docs/04_Database_Documentation.md)**: Database schemas.
-* **[05. Deployment Guides](docs/05_Deployment_Guide.md)**: Multi-stage Docker packaging commands.
-* **[06. QA Testing Guides](docs/06_Testing_Guide.md)**: Test verification checks.
-* **[07. Actuators Monitors Guide](docs/07_Monitoring_Guide.md)**: Custom health indicators details.
-* **[08. Troubleshooting Runbooks](docs/08_Troubleshooting_Guide.md)**: Error resolutions guide.
-* **[09. Contributing Guidelines](docs/09_Contributing_Guide.md)**: Git branching flow.
-* **[10. Sprint Releases Changelog](docs/10_Changelog.md)**: releases changelogs.
+## 9. Future Roadmap
+
+1. **Distributed Schedulers (ShedLock)**: Implement cluster-level locks for task schedulers to support safe multi-node replica scaling.
+2. **SSO Keycloak Integration**: Replace standard JWT generation with Keycloak OAuth2 servers.
+3. **Apache Kafka Decoupling**: Transition outbox event publishing to an external Apache Kafka messaging topic.
 
 ---
 
-## Section 20 - Final Quality Review
-The application compiles and builds successfully under the local-h2 profile. Run `mvn clean package` to bundle target jar archives. All 355 unit and mockito integration test suites execute successfully.
+## 10. Contributing & License
+
+* **Contributing**: Contributions are welcome. Please refer to [CONTRIBUTING.md](CONTRIBUTING.md) for code submission formats.
+* **License**: This project is licensed under the Apache License 2.0. See [LICENSE](LICENSE) for details.

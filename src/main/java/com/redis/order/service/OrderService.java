@@ -34,4 +34,7 @@ public interface OrderService {
 
     /** Internal: Expire order payment timeout. */
     void expireOrder(Long orderId);
+
+    /** Internal: Expire order payment timeout. */
+    void expireOrder(com.redis.order.entity.Order order);
 }

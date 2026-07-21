@@ -1,7 +1,6 @@
 package com.redis.payment.entity;
 
 import com.redis.order.service.OrderService;
-
 import com.redis.order.entity.Order;
 import com.redis.payment.entity.Payment;
 import com.redis.order.entity.OrderStatus;
@@ -13,6 +12,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.context.ApplicationEventPublisher;
+import com.redis.monitoring.service.SystemMonitoringService;
+import com.redis.payment.service.PaymentService;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -34,6 +37,15 @@ public class PaymentExpirationSchedulerTest {
     @Mock
     private OrderService orderService;
 
+    @Mock
+    private PaymentService paymentService;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    private ObjectProvider<SystemMonitoringService> monitoringServiceProvider;
+
     @InjectMocks
     private PaymentExpirationScheduler scheduler;
 
@@ -44,20 +56,11 @@ public class PaymentExpirationSchedulerTest {
                 .status(OrderStatus.PENDING_PAYMENT)
                 .build();
 
-        Payment pendingPayment = Payment.builder()
-                .id(500L)
-                .order(expiredOrder)
-                .status(PaymentStatus.PENDING)
-                .build();
-
         when(orderRepository.findByStatusAndOrderDateBefore(eq(OrderStatus.PENDING_PAYMENT), any(LocalDateTime.class)))
                 .thenReturn(Collections.singletonList(expiredOrder));
 
-        when(paymentRepository.findByOrderId(100L)).thenReturn(Optional.of(pendingPayment));
-
         scheduler.expirePendingPayments();
 
-        verify(orderService, times(1)).expireOrder(100L);
-        verify(paymentRepository, times(1)).save(pendingPayment);
+        verify(paymentService, times(1)).expirePendingPaymentForOrder(expiredOrder);
     }
 }

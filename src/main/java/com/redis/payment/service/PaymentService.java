@@ -16,4 +16,5 @@ public interface PaymentService {
     Page<PaymentResponse> getMyPayments(Long userId, Pageable pageable);
     Page<PaymentResponse> getAllPayments(Pageable pageable);
     PaymentResponse retryPayment(Long orderId);
+    void expirePendingPaymentForOrder(com.redis.order.entity.Order order);
 }

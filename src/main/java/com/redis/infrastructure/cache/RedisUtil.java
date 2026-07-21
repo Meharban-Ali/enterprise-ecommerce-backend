@@ -16,7 +16,6 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 @Component
-@ConditionalOnBean(RedisTemplate.class)
 @RequiredArgsConstructor
 public class RedisUtil {
 

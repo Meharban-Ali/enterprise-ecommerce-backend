@@ -11,7 +11,9 @@ import org.springframework.cache.annotation.EnableCaching;
 public class EcommerceApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(EcommerceApplication.class, args);
+		var context = SpringApplication.run(EcommerceApplication.class, args);
+		var env = context.getEnvironment();
+		System.out.println("Active Spring Profiles: " + java.util.Arrays.toString(env.getActiveProfiles()));
 		System.out.println("Ecommerce redis application started..");
 	}
 

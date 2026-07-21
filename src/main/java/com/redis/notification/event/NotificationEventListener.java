@@ -28,6 +28,8 @@ import com.redis.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -63,7 +65,7 @@ public class NotificationEventListener {
      * Logs observability metrics at the end of execution.
      */
     @Async("notificationAsyncExecutor")
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleNotificationEvent(NotificationEvent event) {
         long startTime = System.currentTimeMillis();
@@ -165,6 +167,7 @@ public class NotificationEventListener {
 
         notification = notificationRepository.saveAndFlush(notification);
         log.info("Notification successfully persisted to DB in {} status. ID: {}", notification.getStatus(), notification.getId());
+        log.info("Notification stored: ID={}, status={}", notification.getId(), notification.getStatus());
 
         // 1b. Push real-time update over WebSocket channel (failsafe)
         try {

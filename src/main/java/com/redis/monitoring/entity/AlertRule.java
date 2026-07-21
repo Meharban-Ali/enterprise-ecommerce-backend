@@ -44,11 +44,13 @@ public class AlertRule extends AuditableEntity implements Serializable {
 
     @NotNull(message = "Alert source is required")
     @Enumerated(EnumType.STRING)
+    @org.hibernate.annotations.JdbcTypeCode(java.sql.Types.VARCHAR)
     @Column(name = "source", nullable = false, length = 50)
     private AlertSource source;
 
     @NotNull(message = "Alert severity is required")
     @Enumerated(EnumType.STRING)
+    @org.hibernate.annotations.JdbcTypeCode(java.sql.Types.VARCHAR)
     @Column(name = "severity", nullable = false, length = 50)
     private AlertSeverity severity;
 

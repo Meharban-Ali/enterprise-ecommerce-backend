@@ -4,6 +4,7 @@ import com.redis.infrastructure.config.NotificationProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -28,6 +29,43 @@ public class RedisNotificationQueueService implements NotificationQueueService {
             log.warn("RedisTemplate not found. Falling back to local in-memory queue.");
             this.useLocalFallback = true;
         }
+    }
+
+    @Scheduled(fixedDelay = 30000)
+    public void attemptRecovery() {
+        if (!useLocalFallback) {
+            return;
+        }
+        if (redisTemplate == null) {
+            return;
+        }
+        log.info("Checking Redis availability for queue service recovery...");
+        try {
+            redisTemplate.getConnectionFactory().getConnection().ping();
+            log.info("Redis connection is restored! Draining local queues to Redis...");
+            drainLocalToRedis();
+            this.useLocalFallback = false;
+        } catch (Exception e) {
+            log.warn("Redis connection check failed, remaining in fallback mode: {}", e.getMessage());
+        }
+    }
+
+    private void drainLocalToRedis() {
+        Long id;
+        int count = 0;
+        while ((id = localQueue.poll()) != null) {
+            redisTemplate.opsForList().rightPush(properties.getRedisQueueName(), id.toString());
+            count++;
+        }
+        while ((id = localRetryQueue.poll()) != null) {
+            redisTemplate.opsForList().rightPush(properties.getRedisQueueName() + ":retry", id.toString());
+            count++;
+        }
+        while ((id = localDlq.poll()) != null) {
+            redisTemplate.opsForList().rightPush(properties.getRedisQueueName() + ":dlq", id.toString());
+            count++;
+        }
+        log.info("Successfully drained {} local queue item(s) back to Redis.", count);
     }
 
     @Override

@@ -462,4 +462,20 @@ public class PaymentServiceImpl implements PaymentService {
                 .updatedAt(payment.getUpdatedAt())
                 .build();
     }
+
+    @Override
+    @Transactional
+    public void expirePendingPaymentForOrder(Order order) {
+        if (order == null) return;
+        orderService.expireOrder(order);
+        java.util.Optional<Payment> paymentOpt = paymentRepository.findByOrderId(order.getId());
+        if (paymentOpt.isPresent()) {
+            Payment payment = paymentOpt.get();
+            if (payment.getStatus() == PaymentStatus.PENDING) {
+                payment.setStatus(PaymentStatus.FAILED);
+                paymentRepository.save(payment);
+                log.info("Payment associated with order ID: {} marked as FAILED.", order.getId());
+            }
+        }
+    }
 }

@@ -29,11 +29,9 @@ public class IdempotencyKey extends AuditableEntity {
 
     private int responseStatus;
 
-    @Lob
     @Column(columnDefinition = "TEXT")
     private String responseBody;
 
-    @Lob
     @Column(columnDefinition = "TEXT")
     private String responseHeaders;
 

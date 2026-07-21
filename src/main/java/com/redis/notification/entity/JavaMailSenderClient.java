@@ -18,6 +18,7 @@ public class JavaMailSenderClient implements MailClient {
     @Override
     public void sendEmail(String to, String subject, String body, boolean isHtml) {
         log.info("Attempting to send email to: {} with subject: {}", to, subject);
+        log.info("SMTP request started: to={}, subject={}", to, subject);
         try {
             if (isHtml) {
                 MimeMessage mimeMessage = mailSender.createMimeMessage();
@@ -34,8 +35,10 @@ public class JavaMailSenderClient implements MailClient {
                 mailSender.send(message);
             }
             log.info("Email successfully sent to: {}", to);
+            log.info("SMTP success: to={}, subject={}", to, subject);
         } catch (Exception e) {
             log.error("Failed to send email to {}: {}", to, e.getMessage(), e);
+            log.error("SMTP failure: to={}, error={}", to, e.getMessage(), e);
             throw new RuntimeException("SMTP email dispatch failed: " + e.getMessage(), e);
         }
     }

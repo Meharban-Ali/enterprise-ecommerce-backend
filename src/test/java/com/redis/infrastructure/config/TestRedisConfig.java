@@ -3,6 +3,7 @@ package com.redis.infrastructure.config;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 
@@ -11,7 +12,11 @@ public class TestRedisConfig {
 
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
-        return Mockito.mock(RedisConnectionFactory.class);
+        RedisConnectionFactory factory = Mockito.mock(RedisConnectionFactory.class);
+        RedisConnection connection = Mockito.mock(RedisConnection.class);
+        Mockito.when(factory.getConnection()).thenReturn(connection);
+        Mockito.when(connection.ping()).thenReturn("PONG");
+        return factory;
     }
 
     @Bean

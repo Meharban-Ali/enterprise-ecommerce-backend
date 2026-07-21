@@ -44,6 +44,9 @@ public class RedisHealthIndicator implements HealthIndicatorService, org.springf
         }
 
         try (RedisConnection connection = factory.getConnection()) {
+            if (connection == null) {
+                throw new IllegalStateException("RedisConnection is null");
+            }
             String pingResult = connection.ping();
             details.put("ping", pingResult);
             details.put("connection", "ESTABLISHED");

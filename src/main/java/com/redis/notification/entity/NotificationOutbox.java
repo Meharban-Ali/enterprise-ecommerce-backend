@@ -26,7 +26,8 @@ public class NotificationOutbox extends AuditableEntity {
 
     
 
-    @Column(name = "event_id", nullable = false, unique = true)
+    @org.hibernate.annotations.JdbcTypeCode(java.sql.Types.VARCHAR)
+    @Column(name = "event_id", nullable = false, unique = true, length = 36)
     private UUID eventId;
 
     @Column(name = "aggregate_type")

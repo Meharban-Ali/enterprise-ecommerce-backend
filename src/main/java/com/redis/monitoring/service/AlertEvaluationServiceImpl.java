@@ -55,11 +55,15 @@ public class AlertEvaluationServiceImpl implements AlertEvaluationService {
     private final PaymentExpirationScheduler paymentExpirationScheduler;
     private final NotificationRetryScheduler notificationRetryScheduler;
     private final NotificationOutboxScheduler notificationOutboxScheduler;
+    private final org.springframework.transaction.support.TransactionTemplate transactionTemplate;
+
+    private final com.redis.common.service.FeatureFlagService featureFlagService;
+    private final com.redis.infrastructure.config.ConfigurationIntegrityService configurationIntegrityService;
+    private final com.redis.reliability.repository.RestoreHistoryRepository restoreHistoryRepository;
 
     private final AtomicLong incidentSequence = new AtomicLong(System.currentTimeMillis() % 1000000);
 
     @Override
-    @Transactional
     public void evaluateRules() {
         log.debug("Starting alert rules evaluation...");
         long startTime = System.currentTimeMillis();
@@ -68,7 +72,9 @@ public class AlertEvaluationServiceImpl implements AlertEvaluationService {
         for (AlertRule rule : enabledRules) {
             try {
                 boolean triggered = checkThreshold(rule);
-                processRuleOutcome(rule, triggered);
+                transactionTemplate.executeWithoutResult(status -> {
+                    processRuleOutcome(rule, triggered);
+                });
             } catch (Exception e) {
                 log.error("Failed to evaluate alert rule: {}", rule.getRuleCode(), e);
             }
@@ -118,6 +124,26 @@ public class AlertEvaluationServiceImpl implements AlertEvaluationService {
                 long heapMax = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getMax();
                 double memoryUtil = heapMax > 0 ? ((double) heapUsed / heapMax) * 100.0 : 0.0;
                 return memoryUtil > rule.getThreshold();
+
+            case "FEATURE_FLAG_DISABLED":
+                if (featureFlagService == null) return false;
+                return !featureFlagService.isEnabled(com.redis.common.entity.FeatureFlag.AUDIT)
+                        || !featureFlagService.isEnabled(com.redis.common.entity.FeatureFlag.SECURITY)
+                        || !featureFlagService.isEnabled(com.redis.common.entity.FeatureFlag.RATE_LIMITING)
+                        || !featureFlagService.isEnabled(com.redis.common.entity.FeatureFlag.API_KEYS)
+                        || !featureFlagService.isEnabled(com.redis.common.entity.FeatureFlag.IDEMPOTENCY);
+
+            case "CONFIG_CORRUPT":
+                if (configurationIntegrityService == null) return false;
+                String current = configurationIntegrityService.getCurrentChecksum();
+                String calculated = configurationIntegrityService.calculateConfigChecksum();
+                return current != null && !current.equals(calculated);
+
+            case "DR_VALIDATION_FAILED":
+                if (restoreHistoryRepository == null) return false;
+                return restoreHistoryRepository.findFirstByOrderByTimestampDesc()
+                        .map(history -> "FAILED".equalsIgnoreCase(history.getStatus()))
+                        .orElse(false);
 
             default:
                 log.warn("Unknown alert rule code: {}", rule.getRuleCode());
