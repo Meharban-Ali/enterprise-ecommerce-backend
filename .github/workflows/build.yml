@@ -17,7 +17,7 @@ on:
 
 jobs:
   build:
-    name: Compile and Package JAR
+    name: Compile, Quality Check & Scan
     runs-on: ubuntu-latest
 
     steps:
@@ -34,11 +34,29 @@ jobs:
       - name: Grant Execute Permissions on Maven Wrapper
         run: chmod +x mvnw
 
-      - name: Compile Source Code
-        run: ./mvnw clean compile
+      - name: Run Secret Scanning
+        uses: aquasecurity/trivy-action@0.20.0
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          scanners: 'secret'
+          severity: 'HIGH,CRITICAL'
+          format: 'table'
+
+      - name: Compile and Quality Check (Checkstyle & SpotBugs)
+        run: ./mvnw clean compile -Pquality-check
 
       - name: Package Application JAR
-        run: ./mvnw package -DskipTests
+        run: ./mvnw package -Pquality-check -DskipTests
+
+      - name: Run Dependency Vulnerability Scan
+        uses: aquasecurity/trivy-action@0.20.0
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          scanners: 'vuln'
+          severity: 'HIGH,CRITICAL'
+          format: 'table'
 
       - name: Upload Packaged Jar Artifact
         uses: actions/upload-artifact@v4

@@ -113,7 +113,7 @@ SUPER_ADMIN_PASSWORD=your_complex_bootstrap_password
 ## 5. Local Setup & Execution
 
 ### Prerequisites
-* Java 17 JDK installed
+* Java 21 JDK installed
 * MySQL 8.0 running (with database `redisdb` created)
 * Redis server running
 

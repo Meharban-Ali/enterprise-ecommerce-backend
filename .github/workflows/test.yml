@@ -34,7 +34,7 @@ jobs:
         run: chmod +x mvnw
 
       - name: Run Test Suite
-        run: ./mvnw test
+        run: ./mvnw test "-DargLine=-Xmx1536m -XX:MaxMetaspaceSize=384m -XX:+UseG1GC"
 
       - name: Upload Surefire Test Reports
         uses: actions/upload-artifact@v4
@@ -43,3 +43,18 @@ jobs:
           name: junit-test-reports
           path: target/surefire-reports/*.xml
           retention-days: 7
+
+      - name: Publish Test Summary
+        if: always()
+        run: |
+          echo "### Test Execution Results 🚀" >> $GITHUB_STEP_SUMMARY
+          if [ -d "target/surefire-reports" ]; then
+            total=$(grep -o "<testcase" target/surefire-reports/*.xml | wc -l || echo "0")
+            failures=$(grep -o "<failure" target/surefire-reports/*.xml | wc -l || echo "0")
+            errors=$(grep -o "<error" target/surefire-reports/*.xml | wc -l || echo "0")
+            echo "- **Total Tests Run:** $total" >> $GITHUB_STEP_SUMMARY
+            echo "- **Failures:** $failures" >> $GITHUB_STEP_SUMMARY
+            echo "- **Errors:** $errors" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No test reports found." >> $GITHUB_STEP_SUMMARY
+          fi
