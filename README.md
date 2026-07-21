@@ -1,7 +1,7 @@
 # Enterprise Spring Boot eCommerce Backend Platform
 
 [![Build Status](https://img.shields.io/badge/Build-Success-brightgreen)](https://github.com/Meharban-Ali/eCommerce-Application)
-[![Java Version](https://img.shields.io/badge/Java-17-blue)](https://openjdk.org/projects/jdk/17)
+[![Java Version](https://img.shields.io/badge/Java-17-blue)](https://openjdk.org/projects/jdk/21)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2-red)](https://spring.io/projects/spring-boot)
 [![Database](https://img.shields.io/badge/MySQL-8.0-orange)](https://www.mysql.com/)
 [![Caching](https://img.shields.io/badge/Redis-7.0-darkred)](https://redis.io/)
