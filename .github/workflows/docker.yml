@@ -16,15 +16,21 @@ on:
 
 jobs:
   docker-build:
-    name: Build and Verify Docker Container
+    name: Build, Lint and Scan Docker Container
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Lint Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          ignore: DL3018  # Ignore alpine package version check to avoid pinning package revisions
+
       - name: Set up Docker Buildx
-        uses: actions/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v3
 
       - name: Build Docker Image (No Registry Push)
         uses: docker/build-push-action@v5
@@ -34,6 +40,13 @@ jobs:
           tags: meharbancoder/ecommerce-app:test-validation
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Run Trivy Container Vulnerability Scan
+        uses: aquasecurity/trivy-action@0.20.0
+        with:
+          image-ref: 'meharbancoder/ecommerce-app:test-validation'
+          format: 'table'
+          severity: 'HIGH,CRITICAL'
 
       - name: Verify Container Image Metadata
         run: |

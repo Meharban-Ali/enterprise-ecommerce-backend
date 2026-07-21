@@ -25,13 +25,13 @@ jobs:
         run: chmod +x mvnw
 
       - name: Run Test Suite
-        run: ./mvnw test
+        run: ./mvnw test "-DargLine=-Xmx1536m -XX:MaxMetaspaceSize=384m -XX:+UseG1GC"
 
       - name: Package Release JAR
         run: ./mvnw package -DskipTests
 
       - name: Set up Docker Buildx
-        uses: actions/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v3
 
       - name: Build Docker Release Image
         uses: docker/build-push-action@v5
@@ -40,6 +40,7 @@ jobs:
           load: true
           tags: meharbancoder/ecommerce-app:${{ github.ref_name }}
           cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Create GitHub Release Draft
         uses: softprops/action-gh-release@v2
@@ -47,6 +48,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           draft: true
+          generate_release_notes: true
           files: |
             target/*.jar
             CHANGELOG.md
