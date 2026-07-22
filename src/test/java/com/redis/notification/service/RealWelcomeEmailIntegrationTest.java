@@ -5,6 +5,7 @@ import com.redis.user.service.UserService;
 import com.redis.notification.repository.NotificationRepository;
 import com.redis.notification.entity.NotificationStatus;
 import com.redis.user.repository.UserRepository;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -15,6 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @ActiveProfiles("dev")
+@Tag("external-service")
 public class RealWelcomeEmailIntegrationTest {
 
     @Autowired

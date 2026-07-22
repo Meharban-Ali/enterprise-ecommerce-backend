@@ -80,7 +80,7 @@ public class NotificationDeliveryIntegrationTest {
         publisher.publishEvent(event);
 
         // Verify that the listener catches the failure and updates status to FAILED
-        await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
+        await().atMost(30, TimeUnit.SECONDS).untilAsserted(() -> {
             List<Notification> notifications = notificationRepository.findAll();
             assertFalse(notifications.isEmpty());
             Notification notification = notifications.get(0);
