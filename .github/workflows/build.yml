@@ -35,7 +35,7 @@ jobs:
         run: chmod +x mvnw
 
       - name: Run Secret Scanning
-        uses: aquasecurity/trivy-action@0.20.0
+        uses: aquasecurity/trivy-action@v0.28.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -50,7 +50,7 @@ jobs:
         run: ./mvnw package -Pquality-check -DskipTests
 
       - name: Run Dependency Vulnerability Scan
-        uses: aquasecurity/trivy-action@0.20.0
+        uses: aquasecurity/trivy-action@v0.28.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
