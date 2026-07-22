@@ -11,10 +11,12 @@ import com.redis.notification.entity.MailClient;
 import com.redis.cart.entity.CartItem;
 import com.redis.cart.entity.Cart;
 import com.redis.order.service.OrderService;
+import com.redis.order.repository.OrderRepository;
 import com.redis.user.entity.User;
 
 import com.redis.infrastructure.config.TestRedisConfig;
 import com.redis.order.dto.request.OrderRequest;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +46,9 @@ public class OrderNotificationIntegrationTest {
     private UserRepository userRepository;
 
     @Autowired
+    private OrderRepository orderRepository;
+
+    @Autowired
     private CartRepository cartRepository;
 
     @Autowired
@@ -62,6 +67,7 @@ public class OrderNotificationIntegrationTest {
     void setUp() {
         notificationRepository.deleteAll();
         cartRepository.deleteAll();
+        orderRepository.deleteAll();
         productRepository.deleteAll();
         userRepository.deleteAll();
 
@@ -110,5 +116,14 @@ public class OrderNotificationIntegrationTest {
             assertFalse(list.isEmpty());
             assertTrue(list.stream().anyMatch(n -> n.getTitle().contains("Order Placed Successfully")));
         });
+    }
+
+    @AfterEach
+    void tearDown() {
+        notificationRepository.deleteAll();
+        cartRepository.deleteAll();
+        orderRepository.deleteAll();
+        productRepository.deleteAll();
+        userRepository.deleteAll();
     }
 }

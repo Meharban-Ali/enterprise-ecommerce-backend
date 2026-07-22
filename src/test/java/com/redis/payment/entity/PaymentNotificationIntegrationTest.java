@@ -17,6 +17,7 @@ import com.redis.infrastructure.config.TestRedisConfig;
 import com.redis.payment.service.gateway.PaymentGateway;
 import com.redis.payment.entity.PaymentMethod;
 import com.redis.payment.entity.PaymentStatus;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -115,5 +116,14 @@ public class PaymentNotificationIntegrationTest {
             assertFalse(list.isEmpty());
             assertTrue(list.stream().anyMatch(n -> n.getTitle().contains("Refund")));
         });
+    }
+
+    @AfterEach
+    void tearDown() {
+        notificationRepository.deleteAll();
+        paymentRepository.deleteAll();
+        orderRepository.deleteAll();
+        cartRepository.deleteAll();
+        userRepository.deleteAll();
     }
 }
