@@ -15,45 +15,41 @@ CREATE INDEX idx_notifications_user_read ON notifications (user_id, read_status)
 CREATE INDEX idx_notifications_status_created ON notifications (status, created_at);
 CREATE INDEX idx_notifications_status_next_retry ON notifications (status, next_retry_at);
 
--- 5. Table: notification_outbox
-CREATE INDEX idx_outbox_event_id ON notification_outbox (event_id);
-
--- 6. Table: notification_rate_limits
+-- 5. Table: notification_rate_limits
 CREATE INDEX idx_rate_limit_composite ON notification_rate_limits (user_id, notification_type, channel, window_type);
 
--- 7. Table: user_notification_preferences
+-- 6. Table: user_notification_preferences
 CREATE INDEX idx_pref_user_id ON user_notification_preferences (user_id);
 
--- 8. Table: orders
+-- 7. Table: orders
 CREATE INDEX idx_orders_order_date ON orders (order_date);
 
--- 9. Table: order_items
+-- 8. Table: order_items
 CREATE INDEX idx_order_items_order_id ON order_items (order_id);
 
--- 10. Table: payments
+-- 9. Table: payments
 CREATE INDEX idx_payments_order_id ON payments (order_id);
 
--- 11. Table: payment_transactions
+-- 10. Table: payment_transactions
 CREATE INDEX idx_transactions_payment_id ON payment_transactions (payment_id);
 CREATE INDEX idx_transactions_gateway_ref ON payment_transactions (gateway_reference_id);
 
--- 12. Table: refunds
+-- 11. Table: refunds
 CREATE INDEX idx_refunds_payment_id ON refunds (payment_id);
 
--- 13. Table: products
+-- 12. Table: products
 CREATE INDEX idx_products_rating ON products (rating);
 CREATE INDEX idx_products_stock_qty ON products (stock_quantity);
 
--- 14. Table: api_keys
+-- 13. Table: api_keys
 CREATE INDEX idx_api_key_rotation_hash ON api_keys (rotation_key_hash);
 
--- 15. Table: idempotency_keys
+-- 14. Table: idempotency_keys
 CREATE INDEX idx_idempotency_key_expiry ON idempotency_keys (expires_at);
 
--- 16. Table: audit_logs
+-- 15. Table: audit_logs
 CREATE INDEX idx_audit_resource ON audit_logs (resource_type, resource_id);
 CREATE INDEX idx_audit_correlation ON audit_logs (correlation_id);
 
--- 17. Table: webhook_deliveries
-CREATE INDEX idx_webhook_deliveries_correlation ON webhook_deliveries (correlation_id);
+-- 16. Table: webhook_deliveries
 CREATE INDEX idx_webhook_deliveries_aggregate ON webhook_deliveries (aggregate_type, aggregate_id);
