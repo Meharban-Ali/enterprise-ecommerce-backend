@@ -3,8 +3,6 @@ package com.redis.security.entity;
 import com.redis.common.base.AuditableEntity;
 
 import com.redis.common.entity.Permission;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.experimental.SuperBuilder;
@@ -37,7 +35,6 @@ public class ApiKey extends AuditableEntity {
     @CollectionTable(name = "api_key_permissions", joinColumns = @JoinColumn(name = "api_key_id"))
     @Enumerated(EnumType.STRING)
     @Column(name = "permission")
-    @JdbcTypeCode(SqlTypes.VARCHAR)
     @Builder.Default
     private Set<Permission> permissions = new HashSet<>();
 

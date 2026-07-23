@@ -7,8 +7,6 @@ import com.redis.common.entity.IntegrationEventType;
 import com.redis.monitoring.entity.AlertSeverity;
 
 import com.redis.common.base.AuditableEntity;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
@@ -76,7 +74,6 @@ public class WebhookEndpoint extends AuditableEntity implements Serializable {
     )
     @Enumerated(EnumType.STRING)
     @Column(name = "event_type")
-    @JdbcTypeCode(SqlTypes.VARCHAR)
     private Set<IntegrationEventType> subscribedEvents;
 
     @NotBlank(message = "Webhook version is required")
