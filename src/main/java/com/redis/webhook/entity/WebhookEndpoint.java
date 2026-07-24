@@ -73,7 +73,7 @@ public class WebhookEndpoint extends AuditableEntity implements Serializable {
         joinColumns = @JoinColumn(name = "endpoint_id")
     )
     @Enumerated(EnumType.STRING)
-    @Column(name = "event_type")
+    @Column(name = "event_type", columnDefinition = "varchar(255)")
     private Set<IntegrationEventType> subscribedEvents;
 
     @NotBlank(message = "Webhook version is required")

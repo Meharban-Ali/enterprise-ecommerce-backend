@@ -46,15 +46,15 @@ public class AuditLog extends AuditableEntity {
     private String email;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "action_type", nullable = false, length = 50)
+    @Column(name = "action_type", nullable = false, columnDefinition = "varchar(255)")
     private AuditActionType actionType;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
+    @Column(nullable = false, length = 30, columnDefinition = "varchar(30)")
     private AuditStatus status;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "resource_type", nullable = false, length = 30)
+    @Column(name = "resource_type", nullable = false, length = 50, columnDefinition = "varchar(50)")
     private ResourceType resourceType;
 
     @Column(name = "resource_id", length = 50)
