@@ -60,7 +60,7 @@ public class User extends AuditableEntity implements UserDetails, java.io.Serial
 
     // ─── Role & Status Flags ────────────────────────────────────────────────────
     @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false, length = 20)
+    @Column(name = "role", nullable = false, length = 20, columnDefinition = "varchar(20)")
     private Role role;
 
     @Builder.Default

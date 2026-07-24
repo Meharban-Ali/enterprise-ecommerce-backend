@@ -56,7 +56,7 @@ public class Order extends AuditableEntity implements Serializable {
 
     // ─── Order State ─────────────────────────────────────────────────────────────
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 20)
+    @Column(name = "status", nullable = false, length = 20, columnDefinition = "varchar(20)")
     @Builder.Default
     private OrderStatus status = OrderStatus.PENDING;
 

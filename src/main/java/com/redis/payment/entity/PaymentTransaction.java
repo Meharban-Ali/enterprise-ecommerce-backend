@@ -41,7 +41,7 @@ public class PaymentTransaction extends AuditableEntity implements Serializable 
     private String gatewayReferenceId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false, length = 30)
+    @Column(name = "type", nullable = false, length = 30, columnDefinition = "varchar(30)")
     private PaymentTransactionType type;
 
     @Column(name = "amount", nullable = false, precision = 12, scale = 2)

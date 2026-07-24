@@ -51,15 +51,15 @@ public class Payment extends AuditableEntity implements Serializable {
     private String currency;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 30)
+    @Column(name = "status", nullable = false, length = 30, columnDefinition = "varchar(30)")
     private PaymentStatus status;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "payment_method", nullable = false, length = 30)
+    @Column(name = "payment_method", nullable = false, length = 30, columnDefinition = "varchar(30)")
     private PaymentMethod paymentMethod;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "payment_gateway", nullable = false, length = 30)
+    @Column(name = "payment_gateway", nullable = false, length = 30, columnDefinition = "varchar(30)")
     private com.redis.payment.entity.PaymentGateway paymentGateway;
 
     @OneToMany(mappedBy = "payment", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)

@@ -42,7 +42,7 @@ public class Refund extends AuditableEntity implements Serializable {
     private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 30)
+    @Column(name = "status", nullable = false, length = 30, columnDefinition = "varchar(30)")
     private RefundStatus status;
 
     @Column(name = "reason", length = 1000)

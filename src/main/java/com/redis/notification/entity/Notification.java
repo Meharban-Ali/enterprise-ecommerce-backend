@@ -57,22 +57,22 @@ public class Notification extends AuditableEntity implements Serializable {
     private String message;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false, length = 50)
+    @Column(name = "type", nullable = false, length = 50, columnDefinition = "varchar(50)")
     @NotNull(message = "Notification type cannot be null")
     private NotificationType type;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "channel", nullable = false, length = 50)
+    @Column(name = "channel", nullable = false, length = 50, columnDefinition = "varchar(50)")
     @NotNull(message = "Notification channel cannot be null")
     private NotificationChannel channel;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "priority", nullable = false, length = 20)
+    @Column(name = "priority", nullable = false, length = 20, columnDefinition = "varchar(20)")
     @NotNull(message = "Notification priority cannot be null")
     private NotificationPriority priority;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 30)
+    @Column(name = "status", nullable = false, length = 30, columnDefinition = "varchar(30)")
     @NotNull(message = "Notification status cannot be null")
     private NotificationStatus status;
 

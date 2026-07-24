@@ -40,7 +40,7 @@ public class WebhookDelivery extends AuditableEntity implements Serializable {
     private WebhookEndpoint webhookEndpoint;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "event_type", nullable = false, length = 50)
+    @Column(name = "event_type", nullable = false, length = 50, columnDefinition = "varchar(50)")
     private IntegrationEventType eventType;
 
     @Column(name = "payload", nullable = false, columnDefinition = "TEXT")
@@ -56,7 +56,7 @@ public class WebhookDelivery extends AuditableEntity implements Serializable {
     private String responseBody;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "delivery_status", nullable = false, length = 30)
+    @Column(name = "delivery_status", nullable = false, length = 30, columnDefinition = "varchar(30)")
     private WebhookStatus deliveryStatus;
 
     @Column(name = "retry_count", nullable = false)

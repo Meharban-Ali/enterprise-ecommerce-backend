@@ -35,11 +35,11 @@ public class NotificationTemplateEntity extends BaseEntity {
     private String templateName;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "notification_type", nullable = false, length = 30)
+    @Column(name = "notification_type", nullable = false, length = 30, columnDefinition = "varchar(30)")
     private NotificationType notificationType;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "notification_channel", nullable = false, length = 30)
+    @Column(name = "notification_channel", nullable = false, length = 30, columnDefinition = "varchar(30)")
     private NotificationChannel notificationChannel;
 
     @Column(nullable = false, length = 255)

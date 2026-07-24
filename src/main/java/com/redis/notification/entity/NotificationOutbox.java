@@ -43,7 +43,7 @@ public class NotificationOutbox extends AuditableEntity {
     private String payload;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
+    @Column(nullable = false, length = 30, columnDefinition = "varchar(30)")
     private OutboxStatus status;
 
     @Column(name = "retry_count", nullable = false)

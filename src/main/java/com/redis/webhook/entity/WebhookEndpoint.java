@@ -82,15 +82,15 @@ public class WebhookEndpoint extends AuditableEntity implements Serializable {
 
     // Filtering Fields
     @Enumerated(EnumType.STRING)
-    @Column(name = "filter_priority", length = 30)
+    @Column(name = "filter_priority", length = 30, columnDefinition = "varchar(30)")
     private NotificationPriority filterPriority;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "filter_channel", length = 30)
+    @Column(name = "filter_channel", length = 30, columnDefinition = "varchar(30)")
     private NotificationChannel filterChannel;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "filter_severity", length = 30)
+    @Column(name = "filter_severity", length = 30, columnDefinition = "varchar(30)")
     private AlertSeverity filterSeverity;
 
     // Rate Limiting
@@ -119,7 +119,7 @@ public class WebhookEndpoint extends AuditableEntity implements Serializable {
 
     // Circuit Breaker State
     @Enumerated(EnumType.STRING)
-    @Column(name = "circuit_state", nullable = false, length = 30)
+    @Column(name = "circuit_state", nullable = false, length = 30, columnDefinition = "varchar(30)")
     private CircuitState circuitState;
 
     @Column(name = "consecutive_failures", nullable = false)

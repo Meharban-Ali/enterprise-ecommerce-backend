@@ -50,11 +50,11 @@ public class Incident extends AuditableEntity implements Serializable {
     private AlertRule alertRule;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "severity", nullable = false, length = 30)
+    @Column(name = "severity", nullable = false, length = 30, columnDefinition = "varchar(30)")
     private AlertSeverity severity;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "source", nullable = false, length = 50)
+    @Column(name = "source", nullable = false, length = 50, columnDefinition = "varchar(50)")
     private AlertSource source;
 
     @Column(name = "title", nullable = false, length = 255)
@@ -64,7 +64,7 @@ public class Incident extends AuditableEntity implements Serializable {
     private String description;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 30)
+    @Column(name = "status", nullable = false, length = 30, columnDefinition = "varchar(30)")
     private AlertStatus status;
 
     @Column(name = "first_occurred_at", nullable = false)
@@ -109,7 +109,7 @@ public class Incident extends AuditableEntity implements Serializable {
 
     // Escalation tracking
     @Enumerated(EnumType.STRING)
-    @Column(name = "escalation_level", nullable = false, length = 30)
+    @Column(name = "escalation_level", nullable = false, length = 30, columnDefinition = "varchar(30)")
     private EscalationLevel escalationLevel;
 
     // Root Cause Analysis
@@ -120,7 +120,7 @@ public class Incident extends AuditableEntity implements Serializable {
     private String resolutionSummary;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "resolution_category", length = 50)
+    @Column(name = "resolution_category", length = 50, columnDefinition = "varchar(50)")
     private ResolutionCategory resolutionCategory;
 
     

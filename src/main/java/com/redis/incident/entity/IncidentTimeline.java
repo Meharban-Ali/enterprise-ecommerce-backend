@@ -35,19 +35,19 @@ public class IncidentTimeline extends AuditableEntity implements Serializable {
     private Incident incident;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "previous_status", length = 30)
+    @Column(name = "previous_status", length = 30, columnDefinition = "varchar(30)")
     private AlertStatus previousStatus;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "new_status", nullable = false, length = 30)
+    @Column(name = "new_status", nullable = false, length = 30, columnDefinition = "varchar(30)")
     private AlertStatus newStatus;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "previous_severity", length = 30)
+    @Column(name = "previous_severity", length = 30, columnDefinition = "varchar(30)")
     private AlertSeverity previousSeverity;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "new_severity", nullable = false, length = 30)
+    @Column(name = "new_severity", nullable = false, length = 30, columnDefinition = "varchar(30)")
     private AlertSeverity newSeverity;
 
     @Column(name = "action_performed_by", nullable = false, length = 100)

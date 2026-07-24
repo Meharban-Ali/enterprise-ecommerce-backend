@@ -29,11 +29,11 @@ public class NotificationRateLimit extends AuditableEntity {
     private Long userId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "notification_type", nullable = false, length = 30)
+    @Column(name = "notification_type", nullable = false, length = 30, columnDefinition = "varchar(30)")
     private NotificationType notificationType;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 30)
+    @Column(nullable = false, length = 30, columnDefinition = "varchar(30)")
     private NotificationChannel channel;
 
     @Column(name = "window_type", nullable = false, length = 20)
