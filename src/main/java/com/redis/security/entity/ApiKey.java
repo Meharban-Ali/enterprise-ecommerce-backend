@@ -34,7 +34,7 @@ public class ApiKey extends AuditableEntity {
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "api_key_permissions", joinColumns = @JoinColumn(name = "api_key_id"))
     @Enumerated(EnumType.STRING)
-    @Column(name = "permission")
+    @Column(name = "permission", columnDefinition = "varchar(255)")
     @Builder.Default
     private Set<Permission> permissions = new HashSet<>();
 
