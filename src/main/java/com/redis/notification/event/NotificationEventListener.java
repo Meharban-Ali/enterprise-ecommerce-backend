@@ -129,13 +129,12 @@ public class NotificationEventListener {
                     context.setVariable("email", user.getEmail());
                     context.setVariable("title", event.getTitle());
                     context.setVariable("message", event.getMessage());
-                    context.setVariable("orderId", 12345L);
-                    context.setVariable("totalAmount", new java.math.BigDecimal("99.99"));
-                    context.setVariable("paymentAmount", new java.math.BigDecimal("99.99"));
-                    context.setVariable("paymentGateway", "Stripe");
-                    context.setVariable("paymentId", 500L);
-                    context.setVariable("refundAmount", new java.math.BigDecimal("99.99"));
-                    context.setVariable("productList", java.util.List.of("Product A", "Product B"));
+
+                    Long refId = event.getReferenceEntityId() != null ? event.getReferenceEntityId() : 0L;
+                    context.setVariable("orderId", refId);
+                    context.setVariable("paymentId", refId);
+                    context.setVariable("referenceEntityId", refId);
+                    context.setVariable("referenceEntityType", event.getReferenceEntityType());
                     context.setVariable("companyName", "E-Commerce Corp");
                     context.setVariable("supportContact", "support@ecommerce.com");
 
@@ -163,6 +162,9 @@ public class NotificationEventListener {
                 .status(finalStatus)
                 .readStatus(false)
                 .failureReason(skipReason)
+                .referenceEntityId(event.getReferenceEntityId())
+                .referenceEntityType(event.getReferenceEntityType())
+                .actionUrl(event.getActionUrl())
                 .build();
 
         notification = notificationRepository.saveAndFlush(notification);

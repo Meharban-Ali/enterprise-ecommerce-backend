@@ -19,7 +19,8 @@
         <p>We were unable to process your payment. You can retry the payment session using the link inside your account center.</p>
         <div class="details">
             <p><strong>Order ID:</strong> <span th:text="${data.orderId}">0</span></p>
-            <p><strong>Attempted Amount:</strong> $<span th:text="${data.paymentAmount}">0.00</span></p>
+            <p th:if="${data.paymentAmount != null}"><strong>Attempted Amount:</strong> $<span th:text="${data.paymentAmount}">0.00</span></p>
+            <p th:if="${data.paymentAmount == null}"><strong>Attempted Amount:</strong> <span>Processing...</span></p>
         </div>
         <div class="footer">
             <p>Best regards,<br><span th:text="${data.companyName}">E-Commerce Corp</span></p>

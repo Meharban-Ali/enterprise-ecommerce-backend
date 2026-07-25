@@ -315,11 +315,8 @@ public class WebhookServiceImpl implements WebhookService {
 
                 // Create a matching Notification with channel=WEBHOOK
                 // Using a dummy user since webhook dispatches to external systems
-                User systemUser = userRepository.findByEmail("superadmin@ecommerce.local").orElse(null);
-                if (systemUser == null) {
-                    // Fallback to first user
-                    systemUser = userRepository.findAll().stream().findFirst().orElse(null);
-                }
+                String systemAdminEmail = "superadmin@ecommerce.local";
+                User systemUser = userRepository.findByEmail(systemAdminEmail).orElse(null);
 
                 if (systemUser != null) {
                     Notification n = Notification.builder()
@@ -330,10 +327,14 @@ public class WebhookServiceImpl implements WebhookService {
                             .channel(NotificationChannel.WEBHOOK)
                             .priority(NotificationPriority.MEDIUM)
                             .status(NotificationStatus.PENDING)
+                            .referenceEntityId(delivery.getId())
+                            .referenceEntityType("WEBHOOK_DELIVERY")
                             .build();
 
                     n = notificationRepository.save(n);
                     queueService.enqueue(n.getId());
+                } else {
+                    log.warn("System admin user '{}' not found in database. Skipped notification creation for webhook delivery ID {}.", systemAdminEmail, delivery.getId());
                 }
 
             } catch (Exception e) {

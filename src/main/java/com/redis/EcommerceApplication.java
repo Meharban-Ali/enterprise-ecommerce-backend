@@ -14,7 +14,7 @@ public class EcommerceApplication {
 		var context = SpringApplication.run(EcommerceApplication.class, args);
 		var env = context.getEnvironment();
 		System.out.println("Active Spring Profiles: " + java.util.Arrays.toString(env.getActiveProfiles()));
-		System.out.println("Ecommerce redis application started..");
+		System.out.println("Enterprise Ecommerce application started..");
 	}
 
 }

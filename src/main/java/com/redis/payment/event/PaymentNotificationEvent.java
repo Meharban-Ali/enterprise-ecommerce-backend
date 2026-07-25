@@ -10,6 +10,12 @@ public class PaymentNotificationEvent extends NotificationEvent {
 
     public PaymentNotificationEvent(Object source, Long userId, String title, String message,
                                     NotificationChannel channel, NotificationPriority priority) {
-        super(source, userId, title, message, channel, priority, NotificationType.PAYMENT);
+        super(source, userId, title, message, channel, priority, NotificationType.PAYMENT, null, "PAYMENT");
+    }
+
+    public PaymentNotificationEvent(Object source, Long userId, String title, String message,
+                                    NotificationChannel channel, NotificationPriority priority,
+                                    Long referenceEntityId, String referenceEntityType) {
+        super(source, userId, title, message, channel, priority, NotificationType.PAYMENT, referenceEntityId, referenceEntityType);
     }
 }

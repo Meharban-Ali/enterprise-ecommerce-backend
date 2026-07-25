@@ -19,7 +19,8 @@
         <p>Your payment has been successfully processed. Here is the receipt summary:</p>
         <div class="details">
             <p><strong>Order ID:</strong> <span th:text="${data.orderId}">0</span></p>
-            <p><strong>Amount Paid:</strong> $<span th:text="${data.paymentAmount}">0.00</span></p>
+            <p th:if="${data.paymentAmount != null}"><strong>Amount Paid:</strong> $<span th:text="${data.paymentAmount}">0.00</span></p>
+            <p th:if="${data.paymentAmount == null}"><strong>Amount Paid:</strong> <span>Processing...</span></p>
             <p><strong>Gateway:</strong> <span th:text="${data.paymentGateway}">Stripe</span></p>
         </div>
         <div class="footer">

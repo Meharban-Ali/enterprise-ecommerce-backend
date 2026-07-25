@@ -10,4 +10,9 @@ public class SecurityNotificationEvent extends NotificationEvent {
                                      NotificationChannel channel, NotificationPriority priority) {
         super(source, userId, title, message, channel, priority, NotificationType.SECURITY);
     }
+
+    public SecurityNotificationEvent(Object source, Long userId, String title, String message,
+                                     NotificationChannel channel, NotificationPriority priority, String actionUrl) {
+        super(source, userId, title, message, channel, priority, NotificationType.SECURITY, null, "SECURITY", actionUrl);
+    }
 }

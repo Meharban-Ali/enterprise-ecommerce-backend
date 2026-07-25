@@ -19,7 +19,8 @@
         <p>A refund has been successfully credited back to your account. Details are below:</p>
         <div class="details">
             <p><strong>Payment ID:</strong> <span th:text="${data.paymentId}">0</span></p>
-            <p><strong>Refund Amount:</strong> $<span th:text="${data.refundAmount}">0.00</span></p>
+            <p th:if="${data.refundAmount != null}"><strong>Refund Amount:</strong> $<span th:text="${data.refundAmount}">0.00</span></p>
+            <p th:if="${data.refundAmount == null}"><strong>Refund Amount:</strong> <span>Processing...</span></p>
         </div>
         <div class="footer">
             <p>Best regards,<br><span th:text="${data.companyName}">E-Commerce Corp</span></p>

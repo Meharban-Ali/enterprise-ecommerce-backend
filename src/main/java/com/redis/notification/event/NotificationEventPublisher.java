@@ -117,10 +117,11 @@ public class NotificationEventPublisher {
         publishEvent(new SecurityNotificationEvent(
                 this,
                 userId,
-                "Password Reset Request",
-                "To reset your password, please use the following link: " + resetUrl,
+                "Password Reset Requested",
+                "Please click the link to reset your password.",
                 NotificationChannel.EMAIL,
-                NotificationPriority.HIGH
+                NotificationPriority.HIGH,
+                resetUrl
         ));
     }
 
@@ -142,7 +143,8 @@ public class NotificationEventPublisher {
                 "Order Placed Successfully",
                 "Your order #" + orderId + " has been placed for amount: $" + amount,
                 NotificationChannel.EMAIL,
-                NotificationPriority.MEDIUM
+                NotificationPriority.MEDIUM,
+                orderId
         ));
     }
 
@@ -153,7 +155,8 @@ public class NotificationEventPublisher {
                 "Order Shipped",
                 "Your order #" + orderId + " has been shipped.",
                 NotificationChannel.EMAIL,
-                NotificationPriority.MEDIUM
+                NotificationPriority.MEDIUM,
+                orderId
         ));
     }
 
@@ -164,7 +167,8 @@ public class NotificationEventPublisher {
                 "Order Payment Received",
                 "Your order #" + orderId + " payment was successful and is now being processed.",
                 NotificationChannel.EMAIL,
-                NotificationPriority.HIGH
+                NotificationPriority.HIGH,
+                orderId
         ));
     }
 
@@ -175,7 +179,8 @@ public class NotificationEventPublisher {
                 "Order Delivered",
                 "Your order #" + orderId + " has been delivered.",
                 NotificationChannel.EMAIL,
-                NotificationPriority.HIGH
+                NotificationPriority.HIGH,
+                orderId
         ));
     }
 
@@ -186,7 +191,8 @@ public class NotificationEventPublisher {
                 "Order Cancelled",
                 "Your order #" + orderId + " has been cancelled.",
                 NotificationChannel.EMAIL,
-                NotificationPriority.MEDIUM
+                NotificationPriority.MEDIUM,
+                orderId
         ));
     }
 
@@ -197,7 +203,8 @@ public class NotificationEventPublisher {
                 "Order Expired",
                 "Your order #" + orderId + " has expired due to non-payment.",
                 NotificationChannel.EMAIL,
-                NotificationPriority.MEDIUM
+                NotificationPriority.MEDIUM,
+                orderId
         ));
     }
 
@@ -208,7 +215,9 @@ public class NotificationEventPublisher {
                 "Payment Successful",
                 "Payment of $" + amount + " for order #" + orderId + " completed successfully.",
                 NotificationChannel.EMAIL,
-                NotificationPriority.HIGH
+                NotificationPriority.HIGH,
+                orderId,
+                "ORDER"
         ));
     }
 
@@ -219,7 +228,9 @@ public class NotificationEventPublisher {
                 "Payment Failed",
                 "Payment of $" + amount + " for order #" + orderId + " failed.",
                 NotificationChannel.EMAIL,
-                NotificationPriority.HIGH
+                NotificationPriority.HIGH,
+                orderId,
+                "ORDER"
         ));
     }
 
@@ -230,7 +241,9 @@ public class NotificationEventPublisher {
                 "Payment Session Created",
                 "Payment session for $" + amount + " for order #" + orderId + " has been initiated.",
                 NotificationChannel.EMAIL,
-                NotificationPriority.MEDIUM
+                NotificationPriority.MEDIUM,
+                orderId,
+                "ORDER"
         ));
     }
 
@@ -241,7 +254,9 @@ public class NotificationEventPublisher {
                 "Payment Session Cancelled",
                 "Payment session for order #" + orderId + " has been cancelled.",
                 NotificationChannel.EMAIL,
-                NotificationPriority.MEDIUM
+                NotificationPriority.MEDIUM,
+                orderId,
+                "ORDER"
         ));
     }
 
@@ -252,7 +267,9 @@ public class NotificationEventPublisher {
                 "Retry Payment Initiated",
                 "A retry payment has been initiated for order #" + orderId,
                 NotificationChannel.EMAIL,
-                NotificationPriority.HIGH
+                NotificationPriority.HIGH,
+                orderId,
+                "ORDER"
         ));
     }
 
@@ -263,7 +280,9 @@ public class NotificationEventPublisher {
                 "Refund Successful",
                 "Refund of $" + amount + " for payment #" + paymentId + " has been processed.",
                 NotificationChannel.EMAIL,
-                NotificationPriority.HIGH
+                NotificationPriority.HIGH,
+                paymentId,
+                "REFUND"
         ));
     }
 

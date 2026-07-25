@@ -10,6 +10,11 @@ public class OrderNotificationEvent extends NotificationEvent {
 
     public OrderNotificationEvent(Object source, Long userId, String title, String message,
                                   NotificationChannel channel, NotificationPriority priority) {
-        super(source, userId, title, message, channel, priority, NotificationType.ORDER);
+        super(source, userId, title, message, channel, priority, NotificationType.ORDER, null, "ORDER");
+    }
+
+    public OrderNotificationEvent(Object source, Long userId, String title, String message,
+                                  NotificationChannel channel, NotificationPriority priority, Long orderId) {
+        super(source, userId, title, message, channel, priority, NotificationType.ORDER, orderId, "ORDER");
     }
 }

@@ -19,7 +19,8 @@
         <p>Thank you for shopping with us. Your order details are below:</p>
         <div class="details">
             <p><strong>Order ID:</strong> <span th:text="${data.orderId}">0</span></p>
-            <p><strong>Total Amount:</strong> $<span th:text="${data.totalAmount}">0.00</span></p>
+            <p th:if="${data.totalAmount != null}"><strong>Total Amount:</strong> $<span th:text="${data.totalAmount}">0.00</span></p>
+            <p th:if="${data.totalAmount == null}"><strong>Total Amount:</strong> <span>Processing...</span></p>
             <p><strong>Items:</strong></p>
             <ul>
                 <li th:each="item : ${data.productList}" th:text="${item}">Product Item</li>

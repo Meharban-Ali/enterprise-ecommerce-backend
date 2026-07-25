@@ -80,6 +80,15 @@ public class Notification extends AuditableEntity implements Serializable {
     @Builder.Default
     private boolean readStatus = false;
 
+    @Column(name = "reference_entity_id")
+    private Long referenceEntityId;
+
+    @Column(name = "reference_entity_type", length = 50, columnDefinition = "varchar(50)")
+    private String referenceEntityType;
+
+    @Column(name = "action_url", length = 500)
+    private String actionUrl;
+
     
 
     

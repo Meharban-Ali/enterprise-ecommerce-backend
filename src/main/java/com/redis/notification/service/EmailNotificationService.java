@@ -20,8 +20,12 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
+import com.redis.reliability.service.PlatformResilienceService;
+
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -34,6 +38,9 @@ public class EmailNotificationService implements NotificationChannelService {
 
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private PlatformResilienceService resilienceService;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.redis.notification.repository.NotificationRepository notificationRepository;
 
     @Override
     public void send(Notification notification) {
@@ -62,9 +69,18 @@ public class EmailNotificationService implements NotificationChannelService {
                                 htmlBody,
                                 true
                         );
+                        notification.setStatus(com.redis.notification.entity.NotificationStatus.SENT);
+                        notification.setDeliveredAt(java.time.LocalDateTime.now());
+                        if (notificationRepository != null) {
+                            notificationRepository.save(notification);
+                        }
                         return null;
                     },
                     () -> {
+                        notification.setStatus(com.redis.notification.entity.NotificationStatus.FAILED);
+                        if (notificationRepository != null) {
+                            notificationRepository.save(notification);
+                        }
                         throw new RuntimeException("SMTP Server Unavailable (fallback)");
                     }
             );
@@ -75,6 +91,11 @@ public class EmailNotificationService implements NotificationChannelService {
                     htmlBody,
                     true
             );
+            notification.setStatus(com.redis.notification.entity.NotificationStatus.SENT);
+            notification.setDeliveredAt(java.time.LocalDateTime.now());
+            if (notificationRepository != null) {
+                notificationRepository.save(notification);
+            }
         }
     }
 
@@ -105,45 +126,143 @@ public class EmailNotificationService implements NotificationChannelService {
         }
     }
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.redis.order.repository.OrderRepository orderRepository;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.redis.payment.repository.PaymentRepository paymentRepository;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private com.redis.payment.repository.RefundRepository refundRepository;
+
     private NotificationTemplateData buildTemplateData(Notification notification, NotificationTemplate template) {
-        String customerName = notification.getUser().getUsername();
+        String customerName = (notification.getUser() != null && notification.getUser().getUsername() != null)
+                ? notification.getUser().getUsername()
+                : "Valued Customer";
+
+        Long refId = notification.getReferenceEntityId();
+        String refType = notification.getReferenceEntityType();
+
         switch (template) {
             case ORDER_PLACED:
             case ORDER_SHIPPED:
-            case ORDER_DELIVERED:
+            case ORDER_DELIVERED: {
+                Long orderId = refId != null ? refId : 0L;
+                BigDecimal totalAmount = null;
+                List<String> productList = new ArrayList<>();
+
+                if (refId != null && orderRepository != null) {
+                    java.util.Optional<com.redis.order.entity.Order> orderOpt = orderRepository.findById(refId);
+                    if (orderOpt.isPresent()) {
+                        com.redis.order.entity.Order order = orderOpt.get();
+                        orderId = order.getId();
+                        totalAmount = order.getTotalAmount();
+                        if (order.getItems() != null && !order.getItems().isEmpty()) {
+                            productList = order.getItems().stream()
+                                    .map(i -> i.getProduct() != null ? i.getProduct().getName() : "Item #" + i.getId())
+                                    .filter(Objects::nonNull)
+                                    .toList();
+                        }
+                    } else {
+                        log.warn("Referenced Order ID {} not found in DB for Notification ID {}. Rendering order status notification without fabricated totals.", refId, notification.getId());
+                    }
+                }
+
+                if (productList.isEmpty()) {
+                    productList = List.of(orderId > 0 ? "Order #" + orderId + " Items (Processing)" : "Order Details Processing");
+                }
+
                 return OrderEmailTemplateData.builder()
                         .customerName(customerName)
-                        .orderId(12345L)
-                        .totalAmount(new BigDecimal("99.99"))
-                        .productList(List.of("Product A", "Product B"))
+                        .orderId(orderId)
+                        .totalAmount(totalAmount)
+                        .productList(productList)
                         .companyName("E-Commerce Corp")
                         .supportContact("support@ecommerce.com")
                         .build();
+            }
+
             case PAYMENT_SUCCESS:
-            case PAYMENT_FAILED:
+            case PAYMENT_FAILED: {
+                Long orderId = refId != null ? refId : 0L;
+                BigDecimal paymentAmount = null;
+                String gateway = "Standard Gateway";
+
+                if (refId != null && paymentRepository != null) {
+                    java.util.Optional<com.redis.payment.entity.Payment> paymentOpt = paymentRepository.findByOrderId(refId);
+                    if (paymentOpt.isPresent()) {
+                        com.redis.payment.entity.Payment p = paymentOpt.get();
+                        paymentAmount = p.getAmount();
+                        if (p.getPaymentGateway() != null) gateway = p.getPaymentGateway().name();
+                    } else {
+                        log.warn("Payment for Order ID {} not found in DB for Notification ID {}. Rendering notification without fabricated payment totals.", refId, notification.getId());
+                    }
+                }
+
                 return PaymentEmailTemplateData.builder()
                         .customerName(customerName)
-                        .orderId(12345L)
-                        .paymentAmount(new BigDecimal("99.99"))
-                        .paymentGateway("Stripe")
+                        .orderId(orderId)
+                        .paymentAmount(paymentAmount)
+                        .paymentGateway(gateway)
                         .companyName("E-Commerce Corp")
                         .supportContact("support@ecommerce.com")
                         .build();
-            case REFUND_SUCCESS:
+            }
+
+            case REFUND_SUCCESS: {
+                Long paymentId = refId != null ? refId : 0L;
+                BigDecimal refundAmount = null;
+
+                if (refId != null) {
+                    if (refundRepository != null) {
+                        java.util.Optional<com.redis.payment.entity.Refund> refundOpt = refundRepository.findById(refId);
+                        if (refundOpt.isPresent()) {
+                            com.redis.payment.entity.Refund refund = refundOpt.get();
+                            refundAmount = refund.getAmount();
+                            if (refund.getPayment() != null) {
+                                paymentId = refund.getPayment().getId();
+                            }
+                        } else {
+                            List<com.redis.payment.entity.Refund> refunds = refundRepository.findByPaymentId(refId);
+                            if (!refunds.isEmpty()) {
+                                refundAmount = refunds.get(0).getAmount();
+                            }
+                        }
+                    }
+
+                    if (refundAmount == null && paymentRepository != null) {
+                        java.util.Optional<com.redis.payment.entity.Payment> paymentOpt = paymentRepository.findById(refId);
+                        if (paymentOpt.isPresent()) {
+                            paymentId = paymentOpt.get().getId();
+                            refundAmount = paymentOpt.get().getAmount();
+                        } else {
+                            log.warn("Payment/Refund ID {} not found in DB for Notification ID {}. Rendering refund notification without fabricated totals.", refId, notification.getId());
+                        }
+                    }
+                }
+
                 return RefundEmailTemplateData.builder()
                         .customerName(customerName)
-                        .paymentId(500L)
-                        .refundAmount(new BigDecimal("99.99"))
+                        .paymentId(paymentId)
+                        .refundAmount(refundAmount)
                         .companyName("E-Commerce Corp")
                         .supportContact("support@ecommerce.com")
                         .build();
-            case PASSWORD_RESET:
+            }
+
+            case PASSWORD_RESET: {
+                String resetUrl = (notification.getActionUrl() != null && !notification.getActionUrl().isBlank())
+                        ? notification.getActionUrl()
+                        : "https://ecommerce.com/reset";
+
                 return PasswordResetTemplateData.builder()
                         .customerName(customerName)
-                        .resetUrl("https://ecommerce.com/reset?token=abc")
+                        .resetUrl(resetUrl)
                         .companyName("E-Commerce Corp")
                         .supportContact("support@ecommerce.com")
                         .build();
+            }
+
             case WELCOME:
             default:
                 return WelcomeTemplateData.builder()
