@@ -13,6 +13,8 @@ import org.springframework.web.client.RestClient;
 
 import java.util.List;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+
 @Slf4j
 @Component
 @ConditionalOnProperty(name = "app.mail.provider", havingValue = "resend")
@@ -22,6 +24,7 @@ public class ResendMailClient implements MailClient {
     private final String apiKey;
     private final String fromEmail;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public ResendMailClient(
             RestClient.Builder restClientBuilder,
             @Value("${app.resend.api-key}") String apiKey,
