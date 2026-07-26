@@ -1,6 +1,5 @@
 package com.redis.auth.dto.request;
 
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
@@ -14,13 +13,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ResetPasswordRequest {
 
-    @NotBlank(message = "Email is required")
-    @Email(message = "Invalid email format")
-    private String email;
-
-    private String securityAnswer; // Optional in new flow (verified in service conditionally)
-
-    private String oldPassword; // New flow: Verify old password
+    @NotBlank(message = "Password reset token is required")
+    private String token;
 
     @NotBlank(message = "New password is required")
     @Pattern(
@@ -29,5 +23,5 @@ public class ResetPasswordRequest {
     )
     private String newPassword;
 
-    private String confirmPassword; // Optional (verified in service conditionally)
+    private String confirmPassword;
 }

@@ -1,34 +1,27 @@
 package com.redis.auth.controller;
 
-import com.redis.user.entity.User;
-import com.redis.infrastructure.config.CorsProperties;
-import com.redis.infrastructure.security.CustomAccessDeniedHandler;
-import com.redis.infrastructure.config.SecurityConfig;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.redis.auth.exception.TokenRefreshException;
-import com.redis.user.exception.UserAlreadyExistsException;
-import com.redis.user.exception.UserNotFoundException;
-import com.redis.common.exception.InvalidSecurityAnswerException;
-import com.redis.common.exception.PasswordMismatchException;
-import com.redis.common.exception.SecurityQuestionNotSetException;
 import com.redis.auth.dto.request.ForgotPasswordRequest;
 import com.redis.auth.dto.request.LoginRequest;
-import com.redis.common.dto.LogoutRequest;
+import com.redis.auth.dto.request.RefreshTokenRequest;
 import com.redis.auth.dto.request.RegisterRequest;
 import com.redis.auth.dto.request.ResetPasswordRequest;
-import com.redis.auth.dto.request.RefreshTokenRequest;
-import com.redis.common.dto.ApiResponse;
-import com.redis.auth.dto.response.ForgotPasswordResponse;
 import com.redis.auth.dto.response.LoginResponse;
-import com.redis.auth.dto.response.RegisterResponse;
 import com.redis.auth.dto.response.RefreshTokenResponse;
+import com.redis.auth.dto.response.RegisterResponse;
+import com.redis.auth.entity.CustomAuthenticationEntryPoint;
+import com.redis.auth.exception.TokenRefreshException;
 import com.redis.auth.service.AuthService;
 import com.redis.auth.service.ForgotPasswordService;
-import com.redis.auth.service.ResetPasswordService;
 import com.redis.auth.service.JwtService;
+import com.redis.common.dto.ApiResponse;
+import com.redis.common.dto.LogoutRequest;
+import com.redis.common.exception.PasswordMismatchException;
+import com.redis.infrastructure.config.CorsProperties;
+import com.redis.infrastructure.config.SecurityConfig;
+import com.redis.infrastructure.security.CustomAccessDeniedHandler;
+import com.redis.user.exception.UserAlreadyExistsException;
 import com.redis.user.service.UserService;
-import com.redis.auth.entity.CustomAuthenticationEntryPoint;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -36,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -44,19 +38,16 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import org.springframework.context.annotation.Import;
-
 @WebMvcTest(AuthController.class)
-@Import(com.redis.infrastructure.config.SecurityConfig.class)
+@Import(SecurityConfig.class)
 @ActiveProfiles("test")
-@DisplayName("AuthController Slice Tests")
+@DisplayName("AuthController Slice Tests — Link-Based Reset")
 class AuthControllerTest {
 
     @Autowired
@@ -75,20 +66,16 @@ class AuthControllerTest {
     private ForgotPasswordService forgotPasswordService;
 
     @MockBean
-    private ResetPasswordService resetPasswordService;
-
-    // Mock beans required to satisfy Spring Security configuration context loading
-    @MockBean
     private JwtService jwtService;
 
     @MockBean
     private UserDetailsService userDetailsService;
 
     @MockBean
-    private com.redis.infrastructure.security.CustomAccessDeniedHandler accessDeniedHandler;
+    private CustomAccessDeniedHandler accessDeniedHandler;
 
     @MockBean
-    private com.redis.infrastructure.config.CorsProperties corsProperties;
+    private CorsProperties corsProperties;
 
     @MockBean
     private CustomAuthenticationEntryPoint authenticationEntryPoint;
@@ -291,18 +278,14 @@ class AuthControllerTest {
     class ForgotPasswordEndpoints {
 
         @Test
-        @DisplayName("✅ Success: Should return 200 OK and security question")
+        @DisplayName("✅ Success: Should return 200 OK with anti-enumeration response")
         void forgotPassword_Success() throws Exception {
             ForgotPasswordRequest request = ForgotPasswordRequest.builder()
                     .email("user@example.com")
                     .build();
 
-            ForgotPasswordResponse response = ForgotPasswordResponse.builder()
-                    .success(true)
-                    .securityQuestion("What is your first school name?")
-                    .build();
-
-            when(forgotPasswordService.retrieveSecurityQuestion(any(ForgotPasswordRequest.class))).thenReturn(response);
+            ApiResponse<Void> apiResponse = ApiResponse.success("If this email is registered, a password reset link has been sent.");
+            when(forgotPasswordService.requestPasswordReset(any(ForgotPasswordRequest.class))).thenReturn(apiResponse);
 
             mockMvc.perform(post("/api/auth/forgot-password")
                             .with(csrf())
@@ -310,46 +293,7 @@ class AuthControllerTest {
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
-                    .andExpect(jsonPath("$.securityQuestion").value("What is your first school name?"));
-        }
-
-        @Test
-        @DisplayName("❌ Failure: Should return 404 Not Found when user does not exist")
-        void forgotPassword_UserNotFound() throws Exception {
-            ForgotPasswordRequest request = ForgotPasswordRequest.builder()
-                    .email("nonexistent@example.com")
-                    .build();
-
-            when(forgotPasswordService.retrieveSecurityQuestion(any(ForgotPasswordRequest.class)))
-                    .thenThrow(new UserNotFoundException("nonexistent@example.com"));
-
-            mockMvc.perform(post("/api/auth/forgot-password")
-                            .with(csrf())
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isNotFound())
-                    .andExpect(jsonPath("$.success").value(false))
-                    .andExpect(jsonPath("$.errorCode").value("USER_NOT_FOUND"))
-                    .andExpect(jsonPath("$.message").value("User not found with email: nonexistent@example.com"));
-        }
-
-        @Test
-        @DisplayName("❌ Failure: Should return 400 Bad Request when security question not set")
-        void forgotPassword_QuestionNotSet() throws Exception {
-            ForgotPasswordRequest request = ForgotPasswordRequest.builder()
-                    .email("user@example.com")
-                    .build();
-
-            when(forgotPasswordService.retrieveSecurityQuestion(any(ForgotPasswordRequest.class)))
-                    .thenThrow(new SecurityQuestionNotSetException("user@example.com"));
-
-            mockMvc.perform(post("/api/auth/forgot-password")
-                            .with(csrf())
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.success").value(false))
-                    .andExpect(jsonPath("$.errorCode").value("SECURITY_QUESTION_NOT_SET"));
+                    .andExpect(jsonPath("$.message").value("If this email is registered, a password reset link has been sent."));
         }
     }
 
@@ -358,16 +302,16 @@ class AuthControllerTest {
     class ResetPasswordEndpoints {
 
         @Test
-        @DisplayName("✅ Success: Should reset password and return 200 OK")
+        @DisplayName("✅ Success: Should reset password via link token and return 200 OK")
         void resetPassword_Success() throws Exception {
             ResetPasswordRequest request = ResetPasswordRequest.builder()
-                    .email("user@example.com")
-                    .securityAnswer("ABC School")
+                    .token("valid-uuid-token")
                     .newPassword("Password@123")
                     .confirmPassword("Password@123")
                     .build();
 
-            doNothing().when(resetPasswordService).resetPassword(any(ResetPasswordRequest.class));
+            ApiResponse<Void> apiResponse = ApiResponse.success("Password reset successfully.");
+            when(forgotPasswordService.resetPassword(any(ResetPasswordRequest.class))).thenReturn(apiResponse);
 
             mockMvc.perform(post("/api/auth/reset-password")
                             .with(csrf())
@@ -379,16 +323,15 @@ class AuthControllerTest {
         }
 
         @Test
-        @DisplayName("❌ Failure: Should return 400 Bad Request on invalid security answer")
-        void resetPassword_InvalidAnswer() throws Exception {
+        @DisplayName("❌ Failure: Should return 400 Bad Request on token error")
+        void resetPassword_InvalidToken() throws Exception {
             ResetPasswordRequest request = ResetPasswordRequest.builder()
-                    .email("user@example.com")
-                    .securityAnswer("Wrong Answer")
+                    .token("invalid-token")
                     .newPassword("Password@123")
-                    .confirmPassword("Password@123")
                     .build();
 
-            doThrow(new InvalidSecurityAnswerException()).when(resetPasswordService).resetPassword(any(ResetPasswordRequest.class));
+            when(forgotPasswordService.resetPassword(any(ResetPasswordRequest.class)))
+                    .thenThrow(new IllegalArgumentException("Invalid or non-existent password reset token"));
 
             mockMvc.perform(post("/api/auth/reset-password")
                             .with(csrf())
@@ -396,48 +339,7 @@ class AuthControllerTest {
                             .content(objectMapper.writeValueAsString(request)))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.success").value(false))
-                    .andExpect(jsonPath("$.errorCode").value("INVALID_SECURITY_ANSWER"));
-        }
-
-        @Test
-        @DisplayName("❌ Failure: Should return 400 Bad Request on password mismatch")
-        void resetPassword_PasswordMismatch() throws Exception {
-            ResetPasswordRequest request = ResetPasswordRequest.builder()
-                    .email("user@example.com")
-                    .securityAnswer("ABC School")
-                    .newPassword("Password@123")
-                    .confirmPassword("Password@321")
-                    .build();
-
-            doThrow(new PasswordMismatchException()).when(resetPasswordService).resetPassword(any(ResetPasswordRequest.class));
-
-            mockMvc.perform(post("/api/auth/reset-password")
-                            .with(csrf())
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.success").value(false))
-                    .andExpect(jsonPath("$.errorCode").value("PASSWORD_MISMATCH"));
-        }
-
-        @Test
-        @DisplayName("❌ Failure: Should return 400 Bad Request on weak password validation")
-        void resetPassword_ValidationError() throws Exception {
-            ResetPasswordRequest request = ResetPasswordRequest.builder()
-                    .email("user@example.com")
-                    .securityAnswer("ABC School")
-                    .newPassword("weak")
-                    .confirmPassword("weak")
-                    .build();
-
-            mockMvc.perform(post("/api/auth/reset-password")
-                            .with(csrf())
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.success").value(false))
-                    .andExpect(jsonPath("$.errorCode").value("VALIDATION_FAILED"))
-                    .andExpect(jsonPath("$.errors").isArray());
+                    .andExpect(jsonPath("$.message").value("Invalid or non-existent password reset token"));
         }
     }
 }

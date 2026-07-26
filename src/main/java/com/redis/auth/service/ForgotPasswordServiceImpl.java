@@ -1,34 +1,30 @@
 package com.redis.auth.service;
 
 import com.redis.audit.entity.AuditActionType;
-import com.redis.user.service.UserSessionService;
-import com.redis.notification.event.NotificationEventPublisher;
-import com.redis.common.entity.ResourceType;
-import com.redis.audit.event.AuditEventPublisher;
-import com.redis.auth.service.RefreshTokenService;
 import com.redis.audit.entity.AuditStatus;
-
-import com.redis.common.exception.InvalidSecurityAnswerException;
-import com.redis.common.exception.PasswordMismatchException;
-import com.redis.common.exception.SecurityQuestionNotSetException;
-import com.redis.user.exception.UserNotFoundException;
+import com.redis.audit.event.AuditEventPublisher;
 import com.redis.auth.dto.request.ForgotPasswordRequest;
-import com.redis.auth.dto.request.ForgotPasswordResetRequest;
-import com.redis.auth.dto.request.ForgotPasswordVerifyRequest;
+import com.redis.auth.dto.request.ResetPasswordRequest;
+import com.redis.auth.entity.PasswordResetToken;
+import com.redis.auth.repository.PasswordResetTokenRepository;
 import com.redis.common.dto.ApiResponse;
-import com.redis.auth.dto.response.ForgotPasswordResponse;
+import com.redis.common.entity.ResourceType;
+import com.redis.common.exception.PasswordMismatchException;
+import com.redis.notification.event.NotificationEventPublisher;
 import com.redis.user.entity.User;
 import com.redis.user.repository.UserRepository;
-import com.redis.infrastructure.cache.RedisUtil;
+import com.redis.user.service.UserSessionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -36,140 +32,113 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ForgotPasswordServiceImpl implements ForgotPasswordService {
 
     private final UserRepository userRepository;
+    private final PasswordResetTokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenService refreshTokenService;
     private final UserSessionService userSessionService;
-    private final ObjectProvider<RedisUtil> redisUtilProvider;
     private final NotificationEventPublisher notificationEventPublisher;
 
-    @org.springframework.beans.factory.annotation.Autowired(required = false)
-    private com.redis.audit.event.AuditEventPublisher auditEventPublisher;
+    @Autowired(required = false)
+    private AuditEventPublisher auditEventPublisher;
 
-    // Thread-safe local cache as fallback if Redis is down
-    private final ConcurrentHashMap<String, LocalDateTime> localVerificationCache = new ConcurrentHashMap<>();
+    @Value("${app.frontend.url:https://easyshoping.fun}")
+    private String frontendUrl;
 
-    private static final String REDIS_VERIFY_PREFIX = "password-reset-verified::";
-    private static final long VERIFY_TTL_MINUTES = 5;
+    private static final long TOKEN_EXPIRY_MINUTES = 15;
+    private static final String GENERIC_RESET_MESSAGE = "If this email is registered, a password reset link has been sent.";
 
     @Override
-    @Transactional(readOnly = true)
-    public ForgotPasswordResponse retrieveSecurityQuestion(ForgotPasswordRequest request) {
-        log.info("Processing forgot password request (security question lookup) for email: {}", request.getEmail());
+    @Transactional
+    public ApiResponse<Void> requestPasswordReset(ForgotPasswordRequest request) {
+        log.info("Processing password reset request for email: {}", request.getEmail());
 
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> {
-                    log.warn("Forgot password lookup failed — email not found in database: {}", request.getEmail());
-                    return new UserNotFoundException(request.getEmail());
-                });
+        Optional<User> userOptional = userRepository.findByEmail(request.getEmail());
 
-        if (user.getSecurityQuestion() == null || user.getSecurityQuestion().isBlank()) {
-            log.warn("Forgot password lookup failed — security question not configured for user ID: {}", user.getId());
-            throw new SecurityQuestionNotSetException(request.getEmail());
+        if (userOptional.isEmpty()) {
+            log.warn("Password reset requested for non-existent email: {} — Returning anti-enumeration response", request.getEmail());
+            return ApiResponse.success(GENERIC_RESET_MESSAGE);
         }
 
-        log.info("Security question retrieved successfully for user ID: {}", user.getId());
-        return ForgotPasswordResponse.builder()
-                .success(true)
-                .securityQuestion(user.getSecurityQuestion())
+        User user = userOptional.get();
+
+        // Delete any existing reset token for this user to ensure single active token
+        tokenRepository.deleteByUser(user);
+
+        // Generate secure random token
+        String tokenStr = UUID.randomUUID().toString();
+        PasswordResetToken resetToken = PasswordResetToken.builder()
+                .user(user)
+                .token(tokenStr)
+                .expiryDate(LocalDateTime.now().plusMinutes(TOKEN_EXPIRY_MINUTES))
+                .used(false)
                 .build();
-    }
 
-    @Override
-    @Transactional(readOnly = true)
-    public ApiResponse<String> verifySecurityAnswer(ForgotPasswordVerifyRequest request) {
-        log.info("Verifying security answer for email: {}", request.getEmail());
+        tokenRepository.save(resetToken);
 
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new UserNotFoundException(request.getEmail()));
+        String resetUrl = frontendUrl + "/reset-password?token=" + tokenStr;
+        log.info("Generated password reset token for user ID: {}. Dispatching email notification.", user.getId());
 
-        if (user.getSecurityQuestion() == null || user.getSecurityQuestion().isBlank()
-                || user.getSecurityAnswer() == null || user.getSecurityAnswer().isBlank()) {
-            throw new SecurityQuestionNotSetException(request.getEmail());
+        try {
+            notificationEventPublisher.publishPasswordReset(user.getId(), user.getEmail(), resetUrl);
+        } catch (Exception e) {
+            log.error("Failed to publish password reset notification for user ID: {}", user.getId(), e);
         }
 
-        // Verify matches
-        if (!passwordEncoder.matches(request.getSecurityAnswer(), user.getSecurityAnswer())) {
-            log.warn("Security verification failed — invalid answer for user ID: {}", user.getId());
-            throw new InvalidSecurityAnswerException();
+        if (auditEventPublisher != null) {
+            auditEventPublisher.publish(user.getId(), user.getEmail(), AuditActionType.PASSWORD_RESET, AuditStatus.SUCCESS,
+                    ResourceType.USER, String.valueOf(user.getId()), "Password reset link requested");
         }
 
-        log.info("Security verification successful for user ID: {}", user.getId());
-
-        // Cache verification state for 5 minutes
-        String cacheKey = REDIS_VERIFY_PREFIX + request.getEmail();
-        RedisUtil redisUtil = redisUtilProvider.getIfAvailable();
-        if (redisUtil != null) {
-            redisUtil.set(cacheKey, "true", VERIFY_TTL_MINUTES);
-        }
-        // Always store in local fallback cache too to ensure seamless functionality
-        localVerificationCache.put(request.getEmail(), LocalDateTime.now().plusMinutes(VERIFY_TTL_MINUTES));
-
-        return ApiResponse.success("Verification successful. Please provide your new password.", null);
+        return ApiResponse.success(GENERIC_RESET_MESSAGE);
     }
 
     @Override
     @Transactional
-    public ApiResponse<Void> resetForgotPassword(ForgotPasswordResetRequest request) {
-        log.info("Processing secure forgot-password reset for email: {}", request.getEmail());
+    public ApiResponse<Void> resetPassword(ResetPasswordRequest request) {
+        log.info("Processing password reset via link token");
 
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new UserNotFoundException(request.getEmail()));
+        PasswordResetToken resetToken = tokenRepository.findByToken(request.getToken())
+                .orElseThrow(() -> {
+                    log.warn("Password reset failed — token not found");
+                    return new IllegalArgumentException("Invalid or non-existent password reset token");
+                });
 
-        // Check if verified
-        String cacheKey = REDIS_VERIFY_PREFIX + request.getEmail();
-        boolean verified = false;
-
-        RedisUtil redisUtil = redisUtilProvider.getIfAvailable();
-        if (redisUtil != null) {
-            Object val = redisUtil.get(cacheKey);
-            if (val != null && "true".equals(val.toString())) {
-                verified = true;
-            }
+        if (resetToken.isUsed()) {
+            log.warn("Password reset failed — token already used for user ID: {}", resetToken.getUser().getId());
+            throw new IllegalArgumentException("Password reset token has already been used");
         }
 
-        if (!verified) {
-            LocalDateTime expiry = localVerificationCache.get(request.getEmail());
-            if (expiry != null && expiry.isAfter(LocalDateTime.now())) {
-                verified = true;
-            }
+        if (resetToken.getExpiryDate().isBefore(LocalDateTime.now())) {
+            log.warn("Password reset failed — token expired at {} for user ID: {}", resetToken.getExpiryDate(), resetToken.getUser().getId());
+            throw new IllegalArgumentException("Password reset token has expired");
         }
 
-        if (!verified) {
-            log.warn("Password reset rejected — security verification required or expired for email: {}", request.getEmail());
-            throw new IllegalArgumentException("Security verification has expired or was not completed");
-        }
-
-        // Check confirm password if provided
         if (request.getConfirmPassword() != null && !request.getConfirmPassword().isBlank()) {
             if (!request.getNewPassword().equals(request.getConfirmPassword())) {
                 throw new PasswordMismatchException("Confirm password does not match new password");
             }
         }
 
-        // Update password using BCrypt
+        User user = resetToken.getUser();
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setPasswordChangeRequired(false);
         userRepository.save(user);
 
-        // Evict verification cache
-        if (redisUtil != null) {
-            redisUtil.delete(cacheKey);
-        }
-        localVerificationCache.remove(request.getEmail());
+        // Mark token as used
+        resetToken.setUsed(true);
+        tokenRepository.save(resetToken);
 
-        // Invalidate old refresh tokens
+        // Invalidate active sessions and refresh tokens
         refreshTokenService.deleteByUserId(user.getId());
-
-        // Logout active session
         userSessionService.logoutSession(user.getEmail());
 
-        log.info("Password updated successfully via forgot-password flow for user ID: {}", user.getId());
+        log.info("Password updated successfully via link reset token for user ID: {}", user.getId());
 
         if (auditEventPublisher != null) {
-            auditEventPublisher.publish(user.getId(), user.getEmail(), com.redis.audit.entity.AuditActionType.PASSWORD_RESET, com.redis.audit.entity.AuditStatus.SUCCESS,
-                    com.redis.common.entity.ResourceType.USER, String.valueOf(user.getId()), "Password reset via forgot password flow");
+            auditEventPublisher.publish(user.getId(), user.getEmail(), AuditActionType.PASSWORD_RESET, AuditStatus.SUCCESS,
+                    ResourceType.USER, String.valueOf(user.getId()), "Password reset successfully via link token");
         }
 
-        // Publish password reset notification
         try {
             notificationEventPublisher.publishPasswordChanged(user.getId(), user.getEmail());
         } catch (Exception e) {

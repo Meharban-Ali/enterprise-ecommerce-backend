@@ -1,23 +1,17 @@
 package com.redis.auth.controller;
 
-import com.redis.user.entity.User;
-
 import com.redis.auth.dto.request.ForgotPasswordRequest;
-import com.redis.auth.dto.request.ForgotPasswordResetRequest;
-import com.redis.auth.dto.request.ForgotPasswordVerifyRequest;
 import com.redis.auth.dto.request.LoginRequest;
-import com.redis.common.dto.LogoutRequest;
+import com.redis.auth.dto.request.RefreshTokenRequest;
 import com.redis.auth.dto.request.RegisterRequest;
 import com.redis.auth.dto.request.ResetPasswordRequest;
-import com.redis.auth.dto.request.RefreshTokenRequest;
-import com.redis.common.dto.ApiResponse;
-import com.redis.auth.dto.response.ForgotPasswordResponse;
 import com.redis.auth.dto.response.LoginResponse;
-import com.redis.auth.dto.response.RegisterResponse;
 import com.redis.auth.dto.response.RefreshTokenResponse;
+import com.redis.auth.dto.response.RegisterResponse;
 import com.redis.auth.service.AuthService;
 import com.redis.auth.service.ForgotPasswordService;
-import com.redis.auth.service.ResetPasswordService;
+import com.redis.common.dto.ApiResponse;
+import com.redis.common.dto.LogoutRequest;
 import com.redis.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +32,6 @@ public class AuthController {
     private final UserService userService;
     private final AuthService authService;
     private final ForgotPasswordService forgotPasswordService;
-    private final ResetPasswordService resetPasswordService;
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<RegisterResponse>> registerUser(
@@ -75,34 +68,18 @@ public class AuthController {
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<ForgotPasswordResponse> forgotPassword(
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(
             @Valid @RequestBody ForgotPasswordRequest request) {
         log.info("API POST /api/auth/forgot-password — forgot password request for email: {}", request.getEmail());
-        ForgotPasswordResponse response = forgotPasswordService.retrieveSecurityQuestion(request);
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/forgot-password/verify")
-    public ResponseEntity<ApiResponse<String>> verifySecurityAnswer(
-            @Valid @RequestBody ForgotPasswordVerifyRequest request) {
-        log.info("API POST /api/auth/forgot-password/verify — verification request for email: {}", request.getEmail());
-        ApiResponse<String> response = forgotPasswordService.verifySecurityAnswer(request);
-        return ResponseEntity.ok(response);
-    }
-
-    @PostMapping("/forgot-password/reset")
-    public ResponseEntity<ApiResponse<Void>> resetForgotPassword(
-            @Valid @RequestBody ForgotPasswordResetRequest request) {
-        log.info("API POST /api/auth/forgot-password/reset — reset request for email: {}", request.getEmail());
-        ApiResponse<Void> response = forgotPasswordService.resetForgotPassword(request);
+        ApiResponse<Void> response = forgotPasswordService.requestPasswordReset(request);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/reset-password")
     public ResponseEntity<ApiResponse<Void>> resetPassword(
             @Valid @RequestBody ResetPasswordRequest request) {
-        log.info("API POST /api/auth/reset-password — reset password request for email: {}", request.getEmail());
-        resetPasswordService.resetPassword(request);
-        return ResponseEntity.ok(ApiResponse.success("Password reset successfully."));
+        log.info("API POST /api/auth/reset-password — link-based reset password request");
+        ApiResponse<Void> response = forgotPasswordService.resetPassword(request);
+        return ResponseEntity.ok(response);
     }
 }

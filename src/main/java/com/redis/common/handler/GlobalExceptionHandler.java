@@ -5,10 +5,8 @@ import com.redis.user.entity.User;
 import com.redis.payment.entity.Payment;
 
 import com.redis.payment.exception.GatewayUnavailableException;
-import com.redis.common.exception.InvalidSecurityAnswerException;
 import com.redis.payment.exception.PaymentNotFoundException;
 import com.redis.payment.exception.PaymentFailedException;
-import com.redis.common.exception.SecurityQuestionNotSetException;
 import com.redis.order.exception.InvalidOrderStateException;
 import com.redis.product.exception.ProductNotFoundException;
 import com.redis.product.exception.ProductDuplicateException;
@@ -155,28 +153,12 @@ public class GlobalExceptionHandler {
             .body(ApiResponse.error(ex.getMessage(), "USER_NOT_FOUND"));
     }
 
-    @ExceptionHandler(InvalidSecurityAnswerException.class)
-    public ResponseEntity<ApiResponse<Void>> handleInvalidSecurityAnswer(InvalidSecurityAnswerException ex) {
-        log.warn("Invalid security answer: {}", ex.getMessage());
-        return ResponseEntity
-            .status(HttpStatus.BAD_REQUEST)
-            .body(ApiResponse.error(ex.getMessage(), "INVALID_SECURITY_ANSWER"));
-    }
-
     @ExceptionHandler(PasswordMismatchException.class)
     public ResponseEntity<ApiResponse<Void>> handlePasswordMismatch(PasswordMismatchException ex) {
         log.warn("Password mismatch: {}", ex.getMessage());
         return ResponseEntity
             .status(HttpStatus.BAD_REQUEST)
             .body(ApiResponse.error(ex.getMessage(), "PASSWORD_MISMATCH"));
-    }
-
-    @ExceptionHandler(SecurityQuestionNotSetException.class)
-    public ResponseEntity<ApiResponse<Void>> handleSecurityQuestionNotSet(SecurityQuestionNotSetException ex) {
-        log.warn("Security question not set: {}", ex.getMessage());
-        return ResponseEntity
-            .status(HttpStatus.BAD_REQUEST)
-            .body(ApiResponse.error(ex.getMessage(), "SECURITY_QUESTION_NOT_SET"));
     }
 
     @ExceptionHandler(ProductNotFoundException.class)
