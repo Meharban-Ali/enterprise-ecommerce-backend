@@ -42,6 +42,11 @@ public class EmailNotificationService implements NotificationChannelService {
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private com.redis.notification.repository.NotificationRepository notificationRepository;
 
+    @jakarta.annotation.PostConstruct
+    public void init() {
+        log.info("MAIL_PROVIDER_STATUS | Active MailClient implementation: {}", mailClient.getClass().getSimpleName());
+    }
+
     @Override
     public void send(Notification notification) {
         log.info("Sending Email notification to: {}", notification.getUser().getEmail());

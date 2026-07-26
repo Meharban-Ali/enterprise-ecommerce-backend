@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-@ConditionalOnProperty(name = "app.mail.provider", havingValue = "smtp", matchIfMissing = true)
+@ConditionalOnProperty(name = "app.mail.provider", havingValue = "smtp")
 @RequiredArgsConstructor
 public class JavaMailSenderClient implements MailClient {
 
