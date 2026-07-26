@@ -87,6 +87,9 @@ public class RedisHealthIndicator implements HealthIndicatorService, org.springf
     @Override
     public org.springframework.boot.actuate.health.Health health() {
         ModuleHealthResponse res = checkHealth();
+        if (!"UP".equalsIgnoreCase(res.getStatus())) {
+            log.warn("ACTUATOR_HEALTH_CHECK | Redis module status: {} - {}", res.getStatus(), res.getMessage());
+        }
         org.springframework.boot.actuate.health.Health.Builder builder;
         if ("UP".equalsIgnoreCase(res.getStatus())) {
             builder = org.springframework.boot.actuate.health.Health.up();

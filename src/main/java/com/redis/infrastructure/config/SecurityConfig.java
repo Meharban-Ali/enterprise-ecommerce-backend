@@ -74,8 +74,8 @@ public class SecurityConfig {
                 ).permitAll()
                 // H2 console (accessible in dev/local profiles only)
                 .requestMatchers("/h2-console/**").permitAll()
-                // Actuator health check (publicly accessible)
-                .requestMatchers("/actuator/health").permitAll()
+                // Actuator health check and custom health probes (publicly accessible)
+                .requestMatchers("/actuator/health", "/api/health/**").permitAll()
                 // Webhook callbacks (externally verified via signatures)
                 .requestMatchers("/api/webhooks/**").permitAll()
                 // WebSocket handshakes
