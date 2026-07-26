@@ -23,6 +23,21 @@ public class RedisHealthIndicator implements HealthIndicatorService, org.springf
     private final ObjectProvider<RedisConnectionFactory> redisConnectionFactoryProvider;
     private final ApplicationEventPublisher eventPublisher;
 
+    @jakarta.annotation.PostConstruct
+    public void logConnectionTarget() {
+        RedisConnectionFactory factory = redisConnectionFactoryProvider.getIfAvailable();
+        if (factory instanceof org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory lettuceFactory) {
+            String host = lettuceFactory.getHostName();
+            int port = lettuceFactory.getPort();
+            boolean hasPassword = lettuceFactory.getPassword() != null && !lettuceFactory.getPassword().isEmpty();
+            log.info("REDIS_CONNECTION_TARGET | Host: {}, Port: {}, PasswordConfigured: {}", host, port, hasPassword);
+        } else if (factory != null) {
+            log.info("REDIS_CONNECTION_TARGET | Active RedisConnectionFactory type: {}", factory.getClass().getName());
+        } else {
+            log.warn("REDIS_CONNECTION_TARGET | RedisConnectionFactory is null - Redis is disabled.");
+        }
+    }
+
     @Override
     public String getName() {
         return "Redis";

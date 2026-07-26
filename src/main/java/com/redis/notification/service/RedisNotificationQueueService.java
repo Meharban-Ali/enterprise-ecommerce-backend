@@ -83,6 +83,7 @@ public class RedisNotificationQueueService implements NotificationQueueService {
         try {
             log.info("OBSERVABILITY - QUEUE_ENQUEUED: notificationId={}, queue={}", notificationId, queueName);
             redisTemplate.opsForList().rightPush(queueName, notificationId.toString());
+            redisTemplate.opsForList().trim(queueName, -1000, -1);
         } catch (Exception e) {
             log.warn("Redis connection failed during enqueue. Falling back to local in-memory queue. Error: {}", e.getMessage());
             this.useLocalFallback = true;
