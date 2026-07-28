@@ -42,5 +42,25 @@ public class ApiSecurityProperties {
     private long maxRequestBodySize = 1048576; // 1MB
     private int maxFailedApiKeyAttempts = 5;
     private int apiKeyLockDurationMinutes = 30;
+    private String endpointRateLimitsRaw = "";
     private java.util.Map<String, Integer> endpointRateLimits = new java.util.HashMap<>();
+
+    public java.util.Map<String, Integer> getParsedEndpointRateLimits() {
+        java.util.Map<String, Integer> map = new java.util.HashMap<>();
+        if (endpointRateLimitsRaw != null && !endpointRateLimitsRaw.isBlank()) {
+            String[] entries = endpointRateLimitsRaw.split(",");
+            for (String entry : entries) {
+                String[] parts = entry.trim().split(":");
+                if (parts.length == 2) {
+                    try {
+                        map.put(parts[0].trim(), Integer.parseInt(parts[1].trim()));
+                    } catch (NumberFormatException ignored) {}
+                }
+            }
+        }
+        if (endpointRateLimits != null) {
+            map.putAll(endpointRateLimits);
+        }
+        return map;
+    }
 }

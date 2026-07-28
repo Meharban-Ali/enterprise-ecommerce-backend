@@ -46,4 +46,31 @@ public class EndpointRateLimitTest {
         assertTrue(Boolean.TRUE.equals(request.getAttribute("rateLimitExceeded")));
         assertEquals("ip:127.0.0.1:POST:/api/orders", request.getAttribute("consumerKey"));
     }
+
+    @Test
+    void testRawStringEndpointRateLimitParsing() throws Exception {
+        SecurityContextHolder.clearContext();
+
+        RateLimitService mockRateLimitService = Mockito.mock(RateLimitService.class);
+        Mockito.when(mockRateLimitService.isAllowed(eq("ip:127.0.0.1:POST:/api/auth/login"), eq(5), eq(60))).thenReturn(false);
+        Mockito.when(mockRateLimitService.getRetryAfterSeconds(eq("ip:127.0.0.1:POST:/api/auth/login"), eq(5), eq(60))).thenReturn(60);
+
+        ApiSecurityProperties props = new ApiSecurityProperties();
+        props.setRateLimitEnabled(true);
+        props.setEndpointRateLimitEnabled(true);
+        props.setEndpointRateLimitsRaw("/api/auth/login:5,/api/auth/register:5");
+
+        RateLimitingFilter filter = new RateLimitingFilter(mockRateLimitService, props, null, null);
+
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/auth/login");
+        request.setRemoteAddr("127.0.0.1");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        MockFilterChain chain = new MockFilterChain();
+
+        filter.doFilter(request, response, chain);
+
+        assertEquals(429, response.getStatus());
+        assertEquals("60", response.getHeader("Retry-After"));
+        assertEquals("ip:127.0.0.1:POST:/api/auth/login", request.getAttribute("consumerKey"));
+    }
 }

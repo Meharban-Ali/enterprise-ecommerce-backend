@@ -9,20 +9,22 @@ import com.redis.audit.entity.AuditActionType;
 import com.redis.security.service.ApiAbuseDetectionService;
 import com.redis.infrastructure.governance.service.ApiGovernanceService;
 import com.redis.security.service.RateLimitService;
-import jakarta.servlet.*;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
+import java.util.Map;
 
 @Slf4j
 @Component
-public class RateLimitingFilter implements Filter {
+public class RateLimitingFilter extends OncePerRequestFilter {
 
     @Autowired(required = false)
     private RateLimitService rateLimitService;
@@ -50,19 +52,29 @@ public class RateLimitingFilter implements Filter {
     }
 
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
-            throws IOException, ServletException {
-        
+    protected void doFilterInternal(HttpServletRequest httpRequest, HttpServletResponse httpResponse, FilterChain filterChain)
+            throws ServletException, IOException {
+
         boolean isEnabled = properties != null && properties.isRateLimitEnabled();
-        if (!isEnabled || rateLimitService == null || !(request instanceof HttpServletRequest) || !(response instanceof HttpServletResponse)) {
-            chain.doFilter(request, response);
+        if (!isEnabled || rateLimitService == null) {
+            filterChain.doFilter(httpRequest, httpResponse);
             return;
         }
 
-        HttpServletRequest httpRequest = (HttpServletRequest) request;
-        HttpServletResponse httpResponse = (HttpServletResponse) response;
-
-        String clientIp = httpRequest.getRemoteAddr();
+        // Harden IP extraction against header spoofing:
+        // 1. Prefer X-Real-IP (overwritten & enforced by Railway/Cloudflare edge proxies)
+        String clientIp = httpRequest.getHeader("X-Real-IP");
+        if (clientIp == null || clientIp.isBlank() || "unknown".equalsIgnoreCase(clientIp)) {
+            // 2. Fall back to X-Forwarded-For: read rightmost IP appended by trusted proxy
+            String xff = httpRequest.getHeader("X-Forwarded-For");
+            if (xff != null && !xff.isBlank() && !"unknown".equalsIgnoreCase(xff)) {
+                String[] ips = xff.split(",");
+                clientIp = ips[ips.length - 1].trim();
+            }
+        }
+        if (clientIp == null || clientIp.isBlank() || "unknown".equalsIgnoreCase(clientIp)) {
+            clientIp = httpRequest.getRemoteAddr();
+        }
         String limitKey;
         int limit;
         int window = 60; 
@@ -92,20 +104,21 @@ public class RateLimitingFilter implements Filter {
             limit = properties.getDefaultRateLimitAnonymous();
         }
 
-        if (properties.isEndpointRateLimitEnabled() && properties.getEndpointRateLimits() != null) {
-            String lookupKey = httpRequest.getMethod() + " " + httpRequest.getRequestURI();
-            Integer override = properties.getEndpointRateLimits().get(lookupKey);
-            if (override == null) {
-                override = properties.getEndpointRateLimits().get(httpRequest.getRequestURI());
-            }
-            if (override != null) {
-                limit = override;
-                limitKey = limitKey + ":" + httpRequest.getMethod() + ":" + httpRequest.getRequestURI();
-            }
+        Map<String, Integer> endpointLimits = properties.getParsedEndpointRateLimits();
+        if (properties.isEndpointRateLimitEnabled() && endpointLimits != null) {
+        String lookupKey = httpRequest.getMethod() + " " + httpRequest.getRequestURI();
+        Integer override = endpointLimits.get(lookupKey);
+        if (override == null) {
+            override = endpointLimits.get(httpRequest.getRequestURI());
+        }
+        if (override != null) {
+            limit = override;
+            limitKey = limitKey + ":" + httpRequest.getMethod() + ":" + httpRequest.getRequestURI();
+        }
         }
 
         if (limit == Integer.MAX_VALUE) {
-            chain.doFilter(request, response);
+            filterChain.doFilter(httpRequest, httpResponse);
             return;
         }
 
@@ -122,8 +135,8 @@ public class RateLimitingFilter implements Filter {
                 abuseDetectionService.recordViolation(clientIp, "RATE_LIMIT_EXCEEDED");
             }
             
-            request.setAttribute("rateLimitExceeded", true);
-            request.setAttribute("consumerKey", limitKey);
+            httpRequest.setAttribute("rateLimitExceeded", true);
+            httpRequest.setAttribute("consumerKey", limitKey);
 
             if (auditEventPublisher != null) {
                 auditEventPublisher.publish(
@@ -139,12 +152,6 @@ public class RateLimitingFilter implements Filter {
             return;
         }
 
-        chain.doFilter(request, response);
+        filterChain.doFilter(httpRequest, httpResponse);
     }
-
-    @Override
-    public void init(FilterConfig filterConfig) {}
-
-    @Override
-    public void destroy() {}
 }
