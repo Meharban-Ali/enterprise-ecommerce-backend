@@ -197,9 +197,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiResponse<Void>> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
         log.warn("JSON parse error: {}", ex.getMessage());
+        String message = "Malformed JSON request body";
+        if (ex.getCause() instanceof com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException upe) {
+            message = "Unrecognized field '" + upe.getPropertyName() + "' in request payload";
+        }
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error("Malformed JSON request body", "INVALID_JSON"));
+                .body(ApiResponse.error(message, "INVALID_JSON"));
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
