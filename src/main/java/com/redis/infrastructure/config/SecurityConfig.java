@@ -175,7 +175,7 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(); // BCrypt with default strength (10 rounds)
+        return new BCryptPasswordEncoder(12); // BCrypt strength 12 rounds (OWASP recommendation)
     }
 
     @Bean

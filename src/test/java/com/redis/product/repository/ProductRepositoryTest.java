@@ -59,9 +59,9 @@ class ProductRepositoryTest {
                 .build();
 
         productRepository.deleteAll();
-        productRepository.save(prod1);
-        productRepository.save(prod2);
-        productRepository.save(prod3);
+        prod1 = productRepository.save(prod1);
+        prod2 = productRepository.save(prod2);
+        prod3 = productRepository.save(prod3);
     }
 
     @Test

@@ -76,7 +76,7 @@ public class NotificationRetrySchedulerTest {
                 .status(NotificationStatus.FAILED)
                 .nextRetryAt(LocalDateTime.now().minusMinutes(5)) // in the past
                 .build();
-        notificationRepository.save(eligible);
+        eligible = notificationRepository.save(eligible);
 
         Notification nonEligible = Notification.builder()
                 .user(testUser)
@@ -88,7 +88,7 @@ public class NotificationRetrySchedulerTest {
                 .status(NotificationStatus.FAILED)
                 .nextRetryAt(LocalDateTime.now().plusMinutes(5)) // in the future
                 .build();
-        notificationRepository.save(nonEligible);
+        nonEligible = notificationRepository.save(nonEligible);
 
         scheduler.processPendingRetries();
 
