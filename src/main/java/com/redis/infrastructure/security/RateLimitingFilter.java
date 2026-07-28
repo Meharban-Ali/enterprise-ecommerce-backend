@@ -61,19 +61,42 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Harden IP extraction against header spoofing:
-        // 1. Prefer X-Real-IP (overwritten & enforced by Railway/Cloudflare edge proxies)
-        String clientIp = httpRequest.getHeader("X-Real-IP");
+        // ===== RAILWAY PROXY HEADER DIAGNOSTIC LOG (Empirical Verification) =====
+        String xRealIp = httpRequest.getHeader("X-Real-IP");
+        String xffRaw = httpRequest.getHeader("X-Forwarded-For");
+        String cfIp = httpRequest.getHeader("CF-Connecting-IP");
+        String remoteAddr = httpRequest.getRemoteAddr();
+
+        log.info("[Railway Proxy Header Audit] URI={} | remoteAddr={} | X-Real-IP={} | CF-Connecting-IP={} | X-Forwarded-For={}",
+                httpRequest.getRequestURI(), remoteAddr, xRealIp, cfIp, xffRaw);
+
+        /*
+         * CLIENT IP EXTRACTION & TRUST BOUNDARY DOCUMENTATION:
+         * Empirically logged on 2026-07-29 to inspect live Railway edge proxy behavior.
+         * Railway reverse proxy header behavior can shift if CDN layers or edge routing change.
+         * Order of precedence:
+         * 1. CF-Connecting-IP (if Cloudflare CDN is active in front of Railway)
+         * 2. X-Real-IP (set/overwritten by edge proxy)
+         * 3. X-Forwarded-For (rightmost IP appended by proxy)
+         * 4. HttpServletRequest.getRemoteAddr() fallback
+         *
+         * LIMITATION & DEFENSE-IN-DEPTH NOTICE:
+         * IP-based rate limiting on unauthenticated endpoints (/api/auth/login, /api/auth/register)
+         * serves as a best-effort deterrent. Post-login, account-based rate limiting (keyed by user/API key)
+         * acts as the primary, un-spoofable security control.
+         */
+        String clientIp = cfIp;
         if (clientIp == null || clientIp.isBlank() || "unknown".equalsIgnoreCase(clientIp)) {
-            // 2. Fall back to X-Forwarded-For: read rightmost IP appended by trusted proxy
-            String xff = httpRequest.getHeader("X-Forwarded-For");
-            if (xff != null && !xff.isBlank() && !"unknown".equalsIgnoreCase(xff)) {
-                String[] ips = xff.split(",");
+            clientIp = xRealIp;
+        }
+        if (clientIp == null || clientIp.isBlank() || "unknown".equalsIgnoreCase(clientIp)) {
+            if (xffRaw != null && !xffRaw.isBlank() && !"unknown".equalsIgnoreCase(xffRaw)) {
+                String[] ips = xffRaw.split(",");
                 clientIp = ips[ips.length - 1].trim();
             }
         }
         if (clientIp == null || clientIp.isBlank() || "unknown".equalsIgnoreCase(clientIp)) {
-            clientIp = httpRequest.getRemoteAddr();
+            clientIp = remoteAddr;
         }
         String limitKey;
         int limit;
