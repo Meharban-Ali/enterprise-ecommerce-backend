@@ -42,6 +42,12 @@ public class EmailNotificationService implements NotificationChannelService {
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private com.redis.notification.repository.NotificationRepository notificationRepository;
 
+    @org.springframework.beans.factory.annotation.Value("${app.company.name:E-Commerce Corp}")
+    private String companyName;
+
+    @org.springframework.beans.factory.annotation.Value("${app.company.support-email:supportecommerces@gmail.com}")
+    private String supportEmail;
+
     @jakarta.annotation.PostConstruct
     public void init() {
         log.info("MAIL_PROVIDER_STATUS | Active MailClient implementation: {}", mailClient.getClass().getSimpleName());
@@ -182,8 +188,8 @@ public class EmailNotificationService implements NotificationChannelService {
                         .orderId(orderId)
                         .totalAmount(totalAmount)
                         .productList(productList)
-                        .companyName("E-Commerce Corp")
-                        .supportContact("support@ecommerce.com")
+                        .companyName(companyName)
+                        .supportContact(supportEmail)
                         .build();
             }
 
@@ -209,8 +215,8 @@ public class EmailNotificationService implements NotificationChannelService {
                         .orderId(orderId)
                         .paymentAmount(paymentAmount)
                         .paymentGateway(gateway)
-                        .companyName("E-Commerce Corp")
-                        .supportContact("support@ecommerce.com")
+                        .companyName(companyName)
+                        .supportContact(supportEmail)
                         .build();
             }
 
@@ -250,21 +256,21 @@ public class EmailNotificationService implements NotificationChannelService {
                         .customerName(customerName)
                         .paymentId(paymentId)
                         .refundAmount(refundAmount)
-                        .companyName("E-Commerce Corp")
-                        .supportContact("support@ecommerce.com")
+                        .companyName(companyName)
+                        .supportContact(supportEmail)
                         .build();
             }
 
             case PASSWORD_RESET: {
                 String resetUrl = (notification.getActionUrl() != null && !notification.getActionUrl().isBlank())
                         ? notification.getActionUrl()
-                        : "https://ecommerce.com/reset";
+                        : "https://easyshoping.fun/reset";
 
                 return PasswordResetTemplateData.builder()
                         .customerName(customerName)
                         .resetUrl(resetUrl)
-                        .companyName("E-Commerce Corp")
-                        .supportContact("support@ecommerce.com")
+                        .companyName(companyName)
+                        .supportContact(supportEmail)
                         .build();
             }
 
@@ -272,8 +278,8 @@ public class EmailNotificationService implements NotificationChannelService {
             default:
                 return WelcomeTemplateData.builder()
                         .customerName(customerName)
-                        .companyName("E-Commerce Corp")
-                        .supportContact("support@ecommerce.com")
+                        .companyName(companyName)
+                        .supportContact(supportEmail)
                         .build();
         }
     }

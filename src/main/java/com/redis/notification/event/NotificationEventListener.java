@@ -57,6 +57,12 @@ public class NotificationEventListener {
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private com.redis.audit.event.AuditEventPublisher auditEventPublisher;
 
+    @org.springframework.beans.factory.annotation.Value("${app.company.name:E-Commerce Corp}")
+    private String companyName;
+
+    @org.springframework.beans.factory.annotation.Value("${app.company.support-email:supportecommerces@gmail.com}")
+    private String supportEmail;
+
     /**
      * Listens to published NotificationEvent subclasses asynchronously.
      * Persists in PENDING status, updates to DELIVERING, triggers channel strategy send,
@@ -135,8 +141,8 @@ public class NotificationEventListener {
                     context.setVariable("paymentId", refId);
                     context.setVariable("referenceEntityId", refId);
                     context.setVariable("referenceEntityType", event.getReferenceEntityType());
-                    context.setVariable("companyName", "E-Commerce Corp");
-                    context.setVariable("supportContact", "support@ecommerce.com");
+                    context.setVariable("companyName", companyName);
+                    context.setVariable("supportContact", supportEmail);
 
                     renderedTitle = engine.process(template.getSubject(), context);
                     if (event.getChannel() == com.redis.notification.entity.NotificationChannel.EMAIL && template.getHtmlTemplate() != null) {

@@ -12,6 +12,12 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class SwaggerConfig {
 
+    @org.springframework.beans.factory.annotation.Value("${app.company.name:E-Commerce Corp}")
+    private String companyName;
+
+    @org.springframework.beans.factory.annotation.Value("${app.company.support-email:supportecommerces@gmail.com}")
+    private String supportEmail;
+
     @Bean
     public OpenAPI customOpenAPI() {
         final String securitySchemeName = "bearerAuth";
@@ -29,8 +35,8 @@ public class SwaggerConfig {
                         .version("1.0.0")
                         .description("Production-level Ecommerce Application with Redis Caching - Complete API Documentation")
                         .contact(new Contact()
-                                .name("Support Team")
-                                .email("support@ecommerce.com")
-                                .url("https://ecommerce.com")));
+                                .name(companyName + " Support")
+                                .email(supportEmail)
+                                .url("https://easyshoping.fun")));
     }
 }

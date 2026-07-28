@@ -8,7 +8,7 @@ This document serves as the single source of truth for the project overview, arc
 The E-Commerce Spring Boot Backend is a high-performance, secure REST API service designed using Spring Boot 3, Redis (for token blacklisting, caching, and rate limiting), and MySQL 8.0 (for persistent storage). It is fully containerized, integrates DB migrations via Flyway, and includes comprehensive automated testing and observability logs.
 
 ### Technical Stack
-* **Language**: Java 17
+* **Language**: Java 21
 * **Framework**: Spring Boot 3.2.0, Spring Security 6.2
 * **ORM & JPA**: Hibernate 6.3.1.Final, Spring Data JPA
 * **Cache & Memory Store**: Redis (via Spring Data Redis / Lettuce driver)
