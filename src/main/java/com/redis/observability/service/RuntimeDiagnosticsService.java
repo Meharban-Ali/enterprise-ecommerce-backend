@@ -22,7 +22,7 @@ public class RuntimeDiagnosticsService {
     
     private final AtomicInteger consecutiveHighMemoryChecks = new AtomicInteger(0);
 
-    @Scheduled(fixedRate = 60000)
+    @Scheduled(fixedDelay = 60000)
     public void diagnoseRuntime() {
         // Thread Diagnostics
         int threadCount = threadMXBean.getThreadCount();

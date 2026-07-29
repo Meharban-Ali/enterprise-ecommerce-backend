@@ -368,24 +368,26 @@ class ProductServiceImplTest {
         void getProductsByMinRating_Success() {
             // Arrange
             BigDecimal minRating = new BigDecimal("4.0");
-            when(productRepository.findProductsByMinRating(minRating))
-                    .thenReturn(List.of(testProduct));
-            when(productMapper.toResponseList(List.of(testProduct)))
-                    .thenReturn(List.of(testResponse));
+            Pageable pageable = PageRequest.of(0, 10);
+            Page<Product> page = new PageImpl<>(List.of(testProduct));
+            when(productRepository.findProductsByMinRating(minRating, pageable))
+                    .thenReturn(page);
+            when(productMapper.toResponse(testProduct))
+                    .thenReturn(testResponse);
 
             // Act
-            List<ProductResponse> result = productService.getProductsByMinRating(minRating);
+            Page<ProductResponse> result = productService.getProductsByMinRating(minRating, pageable);
 
             // Assert
-            assertThat(result).hasSize(1);
-            verify(productRepository).findProductsByMinRating(minRating);
-            verify(productMapper).toResponseList(anyList());
+            assertThat(result.getContent()).hasSize(1);
+            verify(productRepository).findProductsByMinRating(minRating, pageable);
         }
 
         @Test
         @DisplayName("❌ Failure: Should throw IllegalArgumentException when minRating is null")
         void getProductsByMinRating_NullRating_ThrowsException() {
-            assertThatThrownBy(() -> productService.getProductsByMinRating(null))
+            Pageable pageable = PageRequest.of(0, 10);
+            assertThatThrownBy(() -> productService.getProductsByMinRating(null, pageable))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("Minimum rating must not be null");
         }
@@ -393,11 +395,12 @@ class ProductServiceImplTest {
         @Test
         @DisplayName("❌ Failure: Should throw IllegalArgumentException when minRating is out of bounds")
         void getProductsByMinRating_OutOfBounds_ThrowsException() {
-            assertThatThrownBy(() -> productService.getProductsByMinRating(new BigDecimal("-0.1")))
+            Pageable pageable = PageRequest.of(0, 10);
+            assertThatThrownBy(() -> productService.getProductsByMinRating(new BigDecimal("-0.1"), pageable))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("Minimum rating must be between 0.0 and 5.0");
 
-            assertThatThrownBy(() -> productService.getProductsByMinRating(new BigDecimal("5.1")))
+            assertThatThrownBy(() -> productService.getProductsByMinRating(new BigDecimal("5.1"), pageable))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("Minimum rating must be between 0.0 and 5.0");
         }
@@ -407,23 +410,26 @@ class ProductServiceImplTest {
         void getLowStockProducts_Success() {
             // Arrange
             int threshold = 10;
-            when(productRepository.findLowStockProducts(threshold))
-                    .thenReturn(List.of(testProduct));
-            when(productMapper.toResponseList(List.of(testProduct)))
-                    .thenReturn(List.of(testResponse));
+            Pageable pageable = PageRequest.of(0, 10);
+            Page<Product> page = new PageImpl<>(List.of(testProduct));
+            when(productRepository.findLowStockProducts(threshold, pageable))
+                    .thenReturn(page);
+            when(productMapper.toResponse(testProduct))
+                    .thenReturn(testResponse);
 
             // Act
-            List<ProductResponse> result = productService.getLowStockProducts(threshold);
+            Page<ProductResponse> result = productService.getLowStockProducts(threshold, pageable);
 
             // Assert
-            assertThat(result).hasSize(1);
-            verify(productRepository).findLowStockProducts(threshold);
+            assertThat(result.getContent()).hasSize(1);
+            verify(productRepository).findLowStockProducts(threshold, pageable);
         }
 
         @Test
         @DisplayName("❌ Failure: Should throw IllegalArgumentException when threshold is negative")
         void getLowStockProducts_NegativeThreshold_ThrowsException() {
-            assertThatThrownBy(() -> productService.getLowStockProducts(-1))
+            Pageable pageable = PageRequest.of(0, 10);
+            assertThatThrownBy(() -> productService.getLowStockProducts(-1, pageable))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("Stock threshold cannot be negative");
         }
@@ -432,17 +438,19 @@ class ProductServiceImplTest {
         @DisplayName("✅ Success: Should retrieve out of stock products")
         void getOutOfStockProducts_Success() {
             // Arrange
-            when(productRepository.findOutOfStockProducts())
-                    .thenReturn(List.of(testProduct));
-            when(productMapper.toResponseList(List.of(testProduct)))
-                    .thenReturn(List.of(testResponse));
+            Pageable pageable = PageRequest.of(0, 10);
+            Page<Product> page = new PageImpl<>(List.of(testProduct));
+            when(productRepository.findOutOfStockProducts(pageable))
+                    .thenReturn(page);
+            when(productMapper.toResponse(testProduct))
+                    .thenReturn(testResponse);
 
             // Act
-            List<ProductResponse> result = productService.getOutOfStockProducts();
+            Page<ProductResponse> result = productService.getOutOfStockProducts(pageable);
 
             // Assert
-            assertThat(result).hasSize(1);
-            verify(productRepository).findOutOfStockProducts();
+            assertThat(result.getContent()).hasSize(1);
+            verify(productRepository).findOutOfStockProducts(pageable);
         }
     }
 

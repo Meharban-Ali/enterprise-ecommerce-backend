@@ -46,14 +46,17 @@ public interface ProductService {
             Pageable pageable
     );
 
-    /** Fetches products with a rating greater than or equal to the minimum rating. */
-    List<ProductResponse> getProductsByMinRating(BigDecimal minRating);
+    /** Fetches in-stock products priced at or below maxPrice (paginated). */
+    Page<ProductResponse> getAffordableProductsInStock(BigDecimal maxPrice, Pageable pageable);
 
-    /** Retrieves products with stock below a threshold (inventory management). */
-    List<ProductResponse> getLowStockProducts(int threshold);
+    /** Fetches products with a rating greater than or equal to the minimum rating (paginated). */
+    Page<ProductResponse> getProductsByMinRating(BigDecimal minRating, Pageable pageable);
 
-    /** Retrieves all out-of-stock products. */
-    List<ProductResponse> getOutOfStockProducts();
+    /** Retrieves products with stock below a threshold (paginated). */
+    Page<ProductResponse> getLowStockProducts(int threshold, Pageable pageable);
+
+    /** Retrieves all out-of-stock products (paginated). */
+    Page<ProductResponse> getOutOfStockProducts(Pageable pageable);
 
     // ═══════════════════════════════════════════════════════════════════════════
     //  CACHE OPERATIONS

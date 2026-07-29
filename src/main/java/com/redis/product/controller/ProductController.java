@@ -209,18 +209,37 @@ public class ProductController {
                 ApiResponse.success("Products in price range", products));
     }
 
+    @GetMapping("/affordable")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @Operation(summary = "Get affordable products in stock", description = "Filters in-stock products priced at or below maxPrice (paginated)")
+    public ResponseEntity<ApiResponse<Page<ProductResponse>>> getAffordableProducts(
+            @RequestParam BigDecimal maxPrice,
+            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        log.info("GET /api/products/affordable — maxPrice: {}, page: {}, size: {}", maxPrice, page, size);
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ProductResponse> products = productService.getAffordableProductsInStock(maxPrice, pageable);
+
+        return ResponseEntity.ok(
+                ApiResponse.success("Affordable products in stock", products));
+    }
+
     // ═══════════════════════════════════════════════════════════════════════════
     //  RATING & STOCK
     // ═══════════════════════════════════════════════════════════════════════════
 
     @GetMapping("/rating")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    @Operation(summary = "Get products by minimum rating", description = "Filters products with a minimum rating")
-    public ResponseEntity<ApiResponse<List<ProductResponse>>> getByMinRating(
-            @RequestParam BigDecimal minRating) {
+    @Operation(summary = "Get products by minimum rating", description = "Filters products with a minimum rating (paginated)")
+    public ResponseEntity<ApiResponse<Page<ProductResponse>>> getByMinRating(
+            @RequestParam BigDecimal minRating,
+            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "10") int size) {
 
-        log.info("GET /api/products/rating — minRating: {}", minRating);
-        List<ProductResponse> products = productService.getProductsByMinRating(minRating);
+        log.info("GET /api/products/rating — minRating: {}, page: {}, size: {}", minRating, page, size);
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ProductResponse> products = productService.getProductsByMinRating(minRating, pageable);
 
         return ResponseEntity.ok(
                 ApiResponse.success("Products with min rating: " + minRating, products));
@@ -228,12 +247,15 @@ public class ProductController {
 
     @GetMapping("/low-stock")
     @PreAuthorize("hasRole('ADMIN')") // Admin-only: Inventory management operation
-    @Operation(summary = "Get low stock products", description = "Retrieves products with stock below threshold (Admin only)")
-    public ResponseEntity<ApiResponse<List<ProductResponse>>> getLowStock(
-            @RequestParam(defaultValue = "10") int threshold) {
+    @Operation(summary = "Get low stock products", description = "Retrieves products with stock below threshold (Admin only, paginated)")
+    public ResponseEntity<ApiResponse<Page<ProductResponse>>> getLowStock(
+            @RequestParam(defaultValue = "10") int threshold,
+            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "10") int size) {
 
-        log.info("GET /api/products/low-stock — threshold: {}", threshold);
-        List<ProductResponse> products = productService.getLowStockProducts(threshold);
+        log.info("GET /api/products/low-stock — threshold: {}, page: {}, size: {}", threshold, page, size);
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ProductResponse> products = productService.getLowStockProducts(threshold, pageable);
 
         return ResponseEntity.ok(
                 ApiResponse.success("Low stock products (threshold: " + threshold + ")", products));
@@ -241,10 +263,14 @@ public class ProductController {
 
     @GetMapping("/out-of-stock")
     @PreAuthorize("hasRole('ADMIN')") // Admin-only: Inventory management operation
-    @Operation(summary = "Get out of stock products", description = "Retrieves all out of stock products (Admin only)")
-    public ResponseEntity<ApiResponse<List<ProductResponse>>> getOutOfStock() {
-        log.info("GET /api/products/out-of-stock");
-        List<ProductResponse> products = productService.getOutOfStockProducts();
+    @Operation(summary = "Get out of stock products", description = "Retrieves all out of stock products (Admin only, paginated)")
+    public ResponseEntity<ApiResponse<Page<ProductResponse>>> getOutOfStock(
+            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        log.info("GET /api/products/out-of-stock — page: {}, size: {}", page, size);
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ProductResponse> products = productService.getOutOfStockProducts(pageable);
 
         return ResponseEntity.ok(
                 ApiResponse.success("Out of stock products", products));

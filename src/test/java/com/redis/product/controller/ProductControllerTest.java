@@ -295,21 +295,34 @@ class ProductControllerTest {
     class StockAndRatingEndpoints {
 
         @Test
+        @DisplayName("✅ Success: Should return affordable products in stock")
+        void getAffordableProducts_Success() throws Exception {
+            when(productService.getAffordableProductsInStock(any(BigDecimal.class), any(Pageable.class)))
+                    .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(testResponse)));
+
+            mockMvc.perform(get("/api/products/affordable?maxPrice=90000.00"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.content[0].name").value("Xbox Series X"));
+        }
+
+        @Test
         @DisplayName("✅ Success: Should return products with min rating")
         void getByMinRating_Success() throws Exception {
-            when(productService.getProductsByMinRating(any(BigDecimal.class)))
-                    .thenReturn(List.of(testResponse));
+            when(productService.getProductsByMinRating(any(BigDecimal.class), any(Pageable.class)))
+                    .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(testResponse)));
 
             mockMvc.perform(get("/api/products/rating?minRating=4.5"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
-                    .andExpect(jsonPath("$.data[0].name").value("Xbox Series X"));
+                    .andExpect(jsonPath("$.data.content[0].name").value("Xbox Series X"));
         }
 
         @Test
         @DisplayName("✅ Success: Should return low stock products")
         void getLowStock_Success() throws Exception {
-            when(productService.getLowStockProducts(10)).thenReturn(List.of(testResponse));
+            when(productService.getLowStockProducts(eq(10), any(Pageable.class)))
+                    .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(testResponse)));
 
             mockMvc.perform(get("/api/products/low-stock?threshold=10"))
                     .andExpect(status().isOk())
@@ -319,7 +332,8 @@ class ProductControllerTest {
         @Test
         @DisplayName("✅ Success: Should return out of stock products")
         void getOutOfStock_Success() throws Exception {
-            when(productService.getOutOfStockProducts()).thenReturn(List.of(testResponse));
+            when(productService.getOutOfStockProducts(any(Pageable.class)))
+                    .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(testResponse)));
 
             mockMvc.perform(get("/api/products/out-of-stock"))
                     .andExpect(status().isOk())

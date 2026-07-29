@@ -56,10 +56,11 @@ public class ProductServiceImpl implements ProductService {
      */
     @Override
     @Transactional
-    @CacheEvict(
-        value = RedisCacheConfig.CACHE_PRODUCTS, // FIX #7: constant reuse
-        allEntries = true                         // sab pages invalidate
-    )
+    @Caching(evict = {
+        @CacheEvict(value = RedisCacheConfig.CACHE_PRODUCTS, allEntries = true),
+        @CacheEvict(value = RedisCacheConfig.CACHE_CATEGORIES, allEntries = true),
+        @CacheEvict(value = RedisCacheConfig.CACHE_CATEGORY, allEntries = true)
+    })
     public ProductResponse createProduct(ProductRequest request) {
         log.info("Creating product: {}", request.getName());
 
@@ -155,7 +156,11 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     @Caching(
         put   = { @CachePut(value = RedisCacheConfig.CACHE_PRODUCT, key = "#id") },
-        evict = { @CacheEvict(value = RedisCacheConfig.CACHE_PRODUCTS, allEntries = true) }
+        evict = {
+            @CacheEvict(value = RedisCacheConfig.CACHE_PRODUCTS, allEntries = true),
+            @CacheEvict(value = RedisCacheConfig.CACHE_CATEGORIES, allEntries = true),
+            @CacheEvict(value = RedisCacheConfig.CACHE_CATEGORY, allEntries = true)
+        }
     )
     public ProductResponse updateProduct(Long id, ProductRequest request) {
         log.info("Updating product — id: {}", id);
@@ -197,13 +202,15 @@ public class ProductServiceImpl implements ProductService {
 
     /**
      * Deletes a product by ID.
-     * - Evicts both the specific product and paginated products list from cache.
+     * - Evicts both the specific product, paginated products list, and category caches.
      */
     @Override
     @Transactional
     @Caching(evict = {
         @CacheEvict(value = RedisCacheConfig.CACHE_PRODUCT,  key = "#id"),
-        @CacheEvict(value = RedisCacheConfig.CACHE_PRODUCTS, allEntries = true)
+        @CacheEvict(value = RedisCacheConfig.CACHE_PRODUCTS, allEntries = true),
+        @CacheEvict(value = RedisCacheConfig.CACHE_CATEGORIES, allEntries = true),
+        @CacheEvict(value = RedisCacheConfig.CACHE_CATEGORY, allEntries = true)
     })
     public void deleteProduct(Long id) {
         log.info("Deleting product — id: {}", id);
@@ -283,55 +290,96 @@ public class ProductServiceImpl implements ProductService {
             );
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductResponse> getAffordableProductsInStock(BigDecimal maxPrice, Pageable pageable) {
+        if (maxPrice == null || maxPrice.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Max price must be a non-negative value");
+        }
+        log.info("Fetching affordable products in stock — maxPrice: {}, page: {}", maxPrice, pageable.getPageNumber());
+
+        Page<ProductResponse> page = productRepository
+                .findAffordableProductsInStock(maxPrice, pageable)
+                .map(productMapper::toResponse);
+
+        return new RestPageImpl<>(
+            page.getContent(),
+            page.getNumber(),
+            page.getSize(),
+            page.getTotalElements()
+        );
+    }
+
     // ═══════════════════════════════════════════════════════════════════════════
     //  RATING & STOCK
     // ═══════════════════════════════════════════════════════════════════════════
 
     /**
-     * Fetches products with a rating greater than or equal to the minimum rating.
+     * Fetches products with a rating greater than or equal to the minimum rating (paginated).
      */
     @Override
     @Transactional(readOnly = true)
-    public List<ProductResponse> getProductsByMinRating(BigDecimal minRating) {
+    public Page<ProductResponse> getProductsByMinRating(BigDecimal minRating, Pageable pageable) {
         if (minRating == null) {
             throw new IllegalArgumentException("Minimum rating must not be null");
         }
         if (minRating.compareTo(BigDecimal.ZERO) < 0 || minRating.compareTo(new BigDecimal("5.0")) > 0) {
             throw new IllegalArgumentException("Minimum rating must be between 0.0 and 5.0");
         }
-        log.info("Fetching products with min rating: {}", minRating);
+        log.info("Fetching products with min rating: {}, page: {}", minRating, pageable.getPageNumber());
 
-        return productMapper.toResponseList(
-            productRepository.findProductsByMinRating(minRating)
+        Page<ProductResponse> page = productRepository
+                .findProductsByMinRating(minRating, pageable)
+                .map(productMapper::toResponse);
+
+        return new RestPageImpl<>(
+            page.getContent(),
+            page.getNumber(),
+            page.getSize(),
+            page.getTotalElements()
         );
     }
 
     /**
-     * Fetches low stock products below a threshold value.
+     * Fetches low stock products below a threshold value (paginated).
      */
     @Override
     @Transactional(readOnly = true)
-    public List<ProductResponse> getLowStockProducts(int threshold) {
+    public Page<ProductResponse> getLowStockProducts(int threshold, Pageable pageable) {
         if (threshold < 0) {
             throw new IllegalArgumentException("Stock threshold cannot be negative");
         }
-        log.info("Fetching low stock products — threshold: {}", threshold);
+        log.info("Fetching low stock products — threshold: {}, page: {}", threshold, pageable.getPageNumber());
 
-        return productMapper.toResponseList(
-            productRepository.findLowStockProducts(threshold)
+        Page<ProductResponse> page = productRepository
+                .findLowStockProducts(threshold, pageable)
+                .map(productMapper::toResponse);
+
+        return new RestPageImpl<>(
+            page.getContent(),
+            page.getNumber(),
+            page.getSize(),
+            page.getTotalElements()
         );
     }
 
     /**
-     * Fetches out-of-stock products where stockQuantity is 0.
+     * Fetches out-of-stock products where stockQuantity is 0 (paginated).
      */
     @Override
     @Transactional(readOnly = true)
-    public List<ProductResponse> getOutOfStockProducts() {
-        log.info("Fetching out of stock products");
+    public Page<ProductResponse> getOutOfStockProducts(Pageable pageable) {
+        log.info("Fetching out of stock products — page: {}", pageable.getPageNumber());
 
-        return productMapper.toResponseList(
-            productRepository.findOutOfStockProducts()
+        Page<ProductResponse> page = productRepository
+                .findOutOfStockProducts(pageable)
+                .map(productMapper::toResponse);
+
+        return new RestPageImpl<>(
+            page.getContent(),
+            page.getNumber(),
+            page.getSize(),
+            page.getTotalElements()
         );
     }
 

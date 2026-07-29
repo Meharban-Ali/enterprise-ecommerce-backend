@@ -34,15 +34,19 @@ import java.util.stream.Collectors;
 public class RedisCacheConfig implements CachingConfigurer {
 
     // Cache name constants
-    public static final String CACHE_PRODUCTS = "products";
-    public static final String CACHE_PRODUCT  = "product";
-    public static final String CACHE_USERS    = "users";
+    public static final String CACHE_PRODUCTS   = "products";
+    public static final String CACHE_PRODUCT    = "product";
+    public static final String CACHE_CATEGORIES = "categories";
+    public static final String CACHE_CATEGORY   = "category";
+    public static final String CACHE_USERS      = "users";
 
     // Cache TTL configuration constants
-    private static final Duration TTL_DEFAULT  = Duration.ofMinutes(10);
-    private static final Duration TTL_PRODUCTS = Duration.ofMinutes(10);
-    private static final Duration TTL_PRODUCT  = Duration.ofMinutes(30);
-    private static final Duration TTL_USERS    = Duration.ofMinutes(15);
+    private static final Duration TTL_DEFAULT    = Duration.ofMinutes(10);
+    private static final Duration TTL_PRODUCTS   = Duration.ofMinutes(10);
+    private static final Duration TTL_PRODUCT    = Duration.ofMinutes(30);
+    private static final Duration TTL_CATEGORIES = Duration.ofMinutes(30);
+    private static final Duration TTL_CATEGORY   = Duration.ofMinutes(30);
+    private static final Duration TTL_USERS      = Duration.ofMinutes(15);
 
     // Constructor injection for required dependencies
     private final RedisConnectionFactory connectionFactory;
@@ -129,9 +133,11 @@ public class RedisCacheConfig implements CachingConfigurer {
     private Map<String, RedisCacheConfiguration> buildCacheConfigurations(
             RedisCacheConfiguration base) {
         return Map.of(
-                CACHE_PRODUCTS, base.entryTtl(TTL_PRODUCTS),
-                CACHE_PRODUCT,  base.entryTtl(TTL_PRODUCT),
-                CACHE_USERS,    base.entryTtl(TTL_USERS)
+                CACHE_PRODUCTS,   base.entryTtl(TTL_PRODUCTS),
+                CACHE_PRODUCT,    base.entryTtl(TTL_PRODUCT),
+                CACHE_CATEGORIES, base.entryTtl(TTL_CATEGORIES),
+                CACHE_CATEGORY,   base.entryTtl(TTL_CATEGORY),
+                CACHE_USERS,      base.entryTtl(TTL_USERS)
         );
     }
 }

@@ -42,8 +42,8 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
         // Product metrics
         long totalProducts = productRepository.count();
-        long outOfStockProducts = productRepository.findOutOfStockProducts().size();
-        long lowStockProducts = productRepository.findLowStockProducts(LOW_STOCK_THRESHOLD).size();
+        long outOfStockProducts = productRepository.countOutOfStock();
+        long lowStockProducts = productRepository.countLowStock(LOW_STOCK_THRESHOLD);
 
         // Order metrics
         long totalOrders = orderRepository.count();

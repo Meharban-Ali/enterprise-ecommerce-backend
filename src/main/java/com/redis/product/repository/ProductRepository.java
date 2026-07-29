@@ -46,31 +46,36 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     // ═══════════════════════════════════════════════════════════════════════════
 
     /** Fetches products with an exact rating value. */
+    @EntityGraph(attributePaths = {"category"})
     List<Product> findByRating(BigDecimal rating);
 
-    /** Fetches products with rating >= minRating, ordered by rating descending. */
+    /** Fetches products with rating >= minRating, ordered by rating descending (paginated). */
+    @EntityGraph(attributePaths = {"category"})
     @Query("SELECT p FROM Product p WHERE p.rating >= :minRating ORDER BY p.rating DESC")
-    List<Product> findProductsByMinRating(@Param("minRating") BigDecimal minRating);
+    Page<Product> findProductsByMinRating(@Param("minRating") BigDecimal minRating, Pageable pageable);
 
     // ═══════════════════════════════════════════════════════════════════════════
     //  STOCK QUERIES
     // ═══════════════════════════════════════════════════════════════════════════
 
-    /** Fetches in-stock products priced at or below the maximum price. */
+    /** Fetches in-stock products priced at or below the maximum price (paginated). */
+    @EntityGraph(attributePaths = {"category"})
     @Query("SELECT p FROM Product p WHERE p.price <= :maxPrice " +
            "AND p.stockQuantity > 0 " +
            "ORDER BY p.price ASC")
-    List<Product> findAffordableProductsInStock(@Param("maxPrice") BigDecimal maxPrice);
+    Page<Product> findAffordableProductsInStock(@Param("maxPrice") BigDecimal maxPrice, Pageable pageable);
 
-    /** Fetches low-stock products (stock > 0 but <= threshold), ordered by stock ascending. */
+    /** Fetches low-stock products (stock > 0 but <= threshold), ordered by stock ascending (paginated). */
+    @EntityGraph(attributePaths = {"category"})
     @Query("SELECT p FROM Product p WHERE p.stockQuantity > 0 " +
            "AND p.stockQuantity <= :threshold " +
            "ORDER BY p.stockQuantity ASC")
-    List<Product> findLowStockProducts(@Param("threshold") int threshold);
+    Page<Product> findLowStockProducts(@Param("threshold") int threshold, Pageable pageable);
 
-    /** Fetches all out-of-stock products (stockQuantity = 0). */
+    /** Fetches all out-of-stock products (stockQuantity = 0, paginated). */
+    @EntityGraph(attributePaths = {"category"})
     @Query("SELECT p FROM Product p WHERE p.stockQuantity = 0")
-    List<Product> findOutOfStockProducts();
+    Page<Product> findOutOfStockProducts(Pageable pageable);
 
     // ═══════════════════════════════════════════════════════════════════════════
     //  UTILITY QUERIES

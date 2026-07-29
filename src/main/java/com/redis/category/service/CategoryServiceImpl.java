@@ -11,6 +11,10 @@ import com.redis.category.entity.Category;
 import com.redis.category.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+import com.redis.infrastructure.config.RedisCacheConfig;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -31,6 +35,10 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = RedisCacheConfig.CACHE_CATEGORY, allEntries = true),
+        @CacheEvict(value = RedisCacheConfig.CACHE_CATEGORIES, allEntries = true)
+    })
     public CategoryResponse createCategory(CategoryRequest request) {
         log.info("Creating category: {}", request.getName());
 
@@ -56,6 +64,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = RedisCacheConfig.CACHE_CATEGORY, key = "#id")
     public CategoryResponse getCategoryById(Long id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Category not found with ID: " + id));
@@ -64,20 +73,40 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = RedisCacheConfig.CACHE_CATEGORIES, key = "'page_' + #pageable.pageNumber + '_' + #pageable.pageSize + '_' + #pageable.sort")
     public Page<CategoryResponse> getAllCategories(Pageable pageable) {
-        return categoryRepository.findAll(pageable).map(this::toResponse);
+        return categoryRepository.findAllCategorySummaries(pageable).map(proj -> CategoryResponse.builder()
+                .id(proj.getId())
+                .name(proj.getName())
+                .description(proj.getDescription())
+                .productCount(proj.getProductCount())
+                .createdAt(proj.getCreatedAt())
+                .updatedAt(proj.getUpdatedAt())
+                .build());
     }
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = RedisCacheConfig.CACHE_CATEGORIES, key = "'list_all'")
     public List<CategoryResponse> getAllCategoriesList() {
-        return categoryRepository.findAll().stream()
-                .map(this::toResponse)
+        return categoryRepository.findAllCategorySummaries().stream()
+                .map(proj -> CategoryResponse.builder()
+                        .id(proj.getId())
+                        .name(proj.getName())
+                        .description(proj.getDescription())
+                        .productCount(proj.getProductCount())
+                        .createdAt(proj.getCreatedAt())
+                        .updatedAt(proj.getUpdatedAt())
+                        .build())
                 .collect(Collectors.toList());
     }
 
     @Override
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = RedisCacheConfig.CACHE_CATEGORY, allEntries = true),
+        @CacheEvict(value = RedisCacheConfig.CACHE_CATEGORIES, allEntries = true)
+    })
     public CategoryResponse updateCategory(Long id, CategoryRequest request) {
         log.info("Updating category id: {}", id);
 
@@ -103,6 +132,10 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = RedisCacheConfig.CACHE_CATEGORY, allEntries = true),
+        @CacheEvict(value = RedisCacheConfig.CACHE_CATEGORIES, allEntries = true)
+    })
     public void deleteCategory(Long id) {
         log.info("Deleting category id: {}", id);
 

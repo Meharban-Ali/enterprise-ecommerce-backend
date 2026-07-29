@@ -10,8 +10,21 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
+import com.redis.category.dto.response.CategorySummaryProjection;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import java.util.List;
+
 @Repository
 public interface CategoryRepository extends JpaRepository<Category, Long> {
+
+    /** Single-query category listing with pre-aggregated product counts (resolves N+1 query issue). */
+    @Query("SELECT c.id AS id, c.name AS name, c.description AS description, COUNT(p) AS productCount, c.createdAt AS createdAt, c.updatedAt AS updatedAt FROM Category c LEFT JOIN c.products p GROUP BY c.id, c.name, c.description, c.createdAt, c.updatedAt")
+    List<CategorySummaryProjection> findAllCategorySummaries();
+
+    /** Paginated category listing with pre-aggregated product counts. */
+    @Query("SELECT c.id AS id, c.name AS name, c.description AS description, COUNT(p) AS productCount, c.createdAt AS createdAt, c.updatedAt AS updatedAt FROM Category c LEFT JOIN c.products p GROUP BY c.id, c.name, c.description, c.createdAt, c.updatedAt")
+    Page<CategorySummaryProjection> findAllCategorySummaries(Pageable pageable);
 
     /** Exact name match for duplicate validation (case-insensitive). */
     Optional<Category> findByNameIgnoreCase(String name);

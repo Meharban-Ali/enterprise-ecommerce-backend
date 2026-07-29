@@ -108,41 +108,41 @@ class ProductRepositoryTest {
     @DisplayName("✅ Success: Should find products by minimum rating sorted descending")
     void findProductsByMinRating() {
         // Min rating 4.6 should return MacBook Pro (4.8) and iPad Pro (4.7) sorted desc
-        List<Product> result = productRepository.findProductsByMinRating(new BigDecimal("4.6"));
+        Page<Product> result = productRepository.findProductsByMinRating(new BigDecimal("4.6"), PageRequest.of(0, 10));
 
-        assertThat(result).hasSize(2);
-        assertThat(result.get(0).getName()).isEqualTo("MacBook Pro");
-        assertThat(result.get(1).getName()).isEqualTo("iPad Pro");
+        assertThat(result.getContent()).hasSize(2);
+        assertThat(result.getContent().get(0).getName()).isEqualTo("MacBook Pro");
+        assertThat(result.getContent().get(1).getName()).isEqualTo("iPad Pro");
     }
 
     @Test
     @DisplayName("✅ Success: Should find affordable products in stock")
     void findAffordableProductsInStock() {
         // Under 90,000.00 and stock > 0. MacBook Air (85000) matches. iPad Pro has stock 0, so excluded.
-        List<Product> result = productRepository.findAffordableProductsInStock(new BigDecimal("90000.00"));
+        Page<Product> result = productRepository.findAffordableProductsInStock(new BigDecimal("90000.00"), PageRequest.of(0, 10));
 
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getName()).isEqualTo("MacBook Air");
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getName()).isEqualTo("MacBook Air");
     }
 
     @Test
     @DisplayName("✅ Success: Should find low stock products below threshold sorted ascending")
     void findLowStockProducts() {
         // Threshold 10. MacBook Air (5 stock) matches. iPad Pro has 0, so excluded.
-        List<Product> result = productRepository.findLowStockProducts(10);
+        Page<Product> result = productRepository.findLowStockProducts(10, PageRequest.of(0, 10));
 
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getName()).isEqualTo("MacBook Air");
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getName()).isEqualTo("MacBook Air");
     }
 
     @Test
     @DisplayName("✅ Success: Should find out of stock products")
     void findOutOfStockProducts() {
         // iPad Pro has stock = 0
-        List<Product> result = productRepository.findOutOfStockProducts();
+        Page<Product> result = productRepository.findOutOfStockProducts(PageRequest.of(0, 10));
 
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getName()).isEqualTo("iPad Pro");
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getName()).isEqualTo("iPad Pro");
     }
 
     @Test

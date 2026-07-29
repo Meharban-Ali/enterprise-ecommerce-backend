@@ -7,7 +7,12 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "password_reset_tokens")
+@Table(
+    name = "password_reset_tokens",
+    indexes = {
+        @Index(name = "idx_password_reset_tokens_user", columnList = "user_id")
+    }
+)
 @Getter
 @Setter
 @NoArgsConstructor
