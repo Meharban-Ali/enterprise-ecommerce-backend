@@ -20,5 +20,11 @@ public class CorsProperties {
     /**
      * List of allowed origins. Defaults to localhost origins if not specified in configuration files.
      */
-    private List<String> allowedOrigins = List.of("http://localhost:3000", "http://localhost:8080");
+    private List<String> allowedOrigins = List.of(
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://localhost:4173",
+        "http://localhost:8080"
+    );
 }
