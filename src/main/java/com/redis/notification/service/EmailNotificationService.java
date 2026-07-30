@@ -130,6 +130,7 @@ public class EmailNotificationService implements NotificationChannelService {
                 if (title.contains("reset") || title.contains("password")) return NotificationTemplate.PASSWORD_RESET;
                 return NotificationTemplate.WELCOME;
             case SECURITY:
+                if (title.contains("changed") || title.contains("updated")) return NotificationTemplate.PASSWORD_CHANGED;
                 return NotificationTemplate.PASSWORD_RESET;
             case SYSTEM:
             default:
@@ -147,9 +148,14 @@ public class EmailNotificationService implements NotificationChannelService {
     private com.redis.payment.repository.RefundRepository refundRepository;
 
     private NotificationTemplateData buildTemplateData(Notification notification, NotificationTemplate template) {
-        String customerName = (notification.getUser() != null && notification.getUser().getUsername() != null)
-                ? notification.getUser().getUsername()
-                : "Valued Customer";
+        String customerName = "Valued Customer";
+        if (notification.getUser() != null) {
+            if (notification.getUser().getActualUsername() != null && !notification.getUser().getActualUsername().isBlank()) {
+                customerName = notification.getUser().getActualUsername();
+            } else if (notification.getUser().getEmail() != null && !notification.getUser().getEmail().isBlank()) {
+                customerName = notification.getUser().getEmail();
+            }
+        }
 
         Long refId = notification.getReferenceEntityId();
         String refType = notification.getReferenceEntityType();
@@ -269,6 +275,14 @@ public class EmailNotificationService implements NotificationChannelService {
                 return PasswordResetTemplateData.builder()
                         .customerName(customerName)
                         .resetUrl(resetUrl)
+                        .companyName(companyName)
+                        .supportContact(supportEmail)
+                        .build();
+            }
+
+            case PASSWORD_CHANGED: {
+                return com.redis.common.dto.PasswordChangedTemplateData.builder()
+                        .customerName(customerName)
                         .companyName(companyName)
                         .supportContact(supportEmail)
                         .build();

@@ -224,10 +224,6 @@ public class SuperAdminServiceImpl implements SuperAdminService {
                 .role(Role.ROLE_ADMIN)
                 .accountEnabled(true)
                 .accountNonLocked(true)
-                .securityQuestion(request.getSecurityQuestion())
-                .securityAnswer(request.getSecurityAnswer() != null && !request.getSecurityAnswer().isBlank()
-                        ? passwordEncoder.encode(request.getSecurityAnswer())
-                        : null)
                 .build();
 
         User savedAdmin = userRepository.save(admin);

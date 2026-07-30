@@ -5,7 +5,6 @@ import com.redis.notification.event.NotificationEventListener;
 import com.redis.notification.service.NotificationTemplateService;
 
 import com.redis.infrastructure.config.NotificationProperties;
-import com.redis.infrastructure.config.TestRedisConfig;
 import com.redis.notification.event.NotificationEvent;
 import com.redis.notification.event.SystemNotificationEvent;
 import com.redis.notification.dto.request.NotificationPreferenceRequest;
@@ -37,7 +36,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@Import(TestRedisConfig.class)
 public class NotificationAdministrationIntegrationTest {
 
     @Autowired
@@ -124,6 +122,7 @@ public class NotificationAdministrationIntegrationTest {
 
     @Test
     void testUserPreferencesSkippingAndSecurityBypass() throws Exception {
+        notificationRepository.deleteAll();
         NotificationPreferenceRequest prefReq = NotificationPreferenceRequest.builder()
                 .emailEnabled(false)
                 .smsEnabled(true)

@@ -54,4 +54,16 @@ public class UserController {
         UserResponse response = userService.updateProfile(user.getId(), request);
         return ResponseEntity.ok(ApiResponse.success("Profile updated successfully", response));
     }
+
+    @PutMapping("/change-password")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> changePassword(
+            @Valid @RequestBody com.redis.user.dto.request.ChangePasswordRequest request) {
+        log.info("API PUT /api/user/change-password — request received");
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        User user = (User) auth.getPrincipal();
+
+        userService.changePassword(user.getId(), request);
+        return ResponseEntity.ok(ApiResponse.success("Password changed successfully"));
+    }
 }

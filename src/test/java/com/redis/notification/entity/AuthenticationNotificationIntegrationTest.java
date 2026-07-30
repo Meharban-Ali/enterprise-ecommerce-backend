@@ -56,8 +56,6 @@ public class AuthenticationNotificationIntegrationTest {
                 .username("reguser")
                 .email("reg@example.com")
                 .password("Password123!")
-                .securityQuestion("Quest")
-                .securityAnswer("Answ")
                 .build();
 
         userService.registerUser(request);

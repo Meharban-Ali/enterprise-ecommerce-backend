@@ -13,6 +13,7 @@ import com.redis.auth.dto.response.RegisterResponse;
 import com.redis.user.dto.response.UserResponse;
 import com.redis.user.entity.Role;
 import com.redis.user.entity.User;
+import com.redis.auth.service.RefreshTokenService;
 import com.redis.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +30,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final NotificationEventPublisher notificationEventPublisher;
+    private final RefreshTokenService refreshTokenService;
 
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private com.redis.audit.event.AuditEventPublisher auditEventPublisher;
@@ -45,16 +47,7 @@ public class UserServiceImpl implements UserService {
             throw new UserAlreadyExistsException(request.getEmail());
         }
 
-        // 2. Validate security question and answer consistency
-        if ((request.getSecurityQuestion() != null && !request.getSecurityQuestion().isBlank()) 
-                || (request.getSecurityAnswer() != null && !request.getSecurityAnswer().isBlank())) {
-            if (request.getSecurityQuestion() == null || request.getSecurityQuestion().isBlank() 
-                    || request.getSecurityAnswer() == null || request.getSecurityAnswer().isBlank()) {
-                throw new IllegalArgumentException("Both security question and security answer must be provided if either is set");
-            }
-        }
-
-        // 3. Map DTO to User entity and encrypt password
+        // 2. Map DTO to User entity and encrypt password
         User user = User.builder()
                 .username(request.getUsername())
                 .email(request.getEmail())
@@ -62,10 +55,6 @@ public class UserServiceImpl implements UserService {
                 .role(Role.ROLE_USER) // Default role assignment
                 .accountEnabled(true) // Default enabled
                 .accountNonLocked(true) // Default unlocked
-                .securityQuestion(request.getSecurityQuestion())
-                .securityAnswer(request.getSecurityAnswer() != null && !request.getSecurityAnswer().isBlank() 
-                        ? passwordEncoder.encode(request.getSecurityAnswer()) 
-                        : null)
                 .build();
 
         // 4. Persist entity
@@ -143,5 +132,54 @@ public class UserServiceImpl implements UserService {
                         .updatedAt(user.getUpdatedAt())
                         .build())
                 .orElse(null);
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(Long userId, com.redis.user.dto.request.ChangePasswordRequest request) {
+        log.info("Processing password change for user ID: {}", userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with ID: " + userId));
+
+        // Validation a: oldPassword must match current stored password
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            log.warn("Password change failed for user ID: {} — current password mismatch", userId);
+            throw new IllegalArgumentException("Current password does not match");
+        }
+
+        // Validation b: newPassword must match confirmPassword
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            log.warn("Password change failed for user ID: {} — confirm password mismatch", userId);
+            throw new IllegalArgumentException("New password and confirm password do not match");
+        }
+
+        // Validation d: newPassword must not be identical to oldPassword
+        if (request.getNewPassword().equals(request.getOldPassword())) {
+            log.warn("Password change failed for user ID: {} — new password identical to current password", userId);
+            throw new IllegalArgumentException("New password cannot be the same as the current password");
+        }
+
+        // Encode and save new password
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        // Revoke all active refresh tokens (invalidates active sessions atomically within transaction)
+        refreshTokenService.deleteByUserId(user.getId());
+        log.info("Revoked all active refresh tokens for user ID: {}", userId);
+
+        // Publish confirmation email event
+        try {
+            notificationEventPublisher.publishPasswordChanged(user.getId(), user.getEmail());
+            log.info("Password changed confirmation email event published for user ID: {}", userId);
+        } catch (Exception e) {
+            log.error("Failed to publish password change notification event for user ID: {}", userId, e);
+        }
+
+        log.info("Password changed successfully for user ID: {}", userId);
+
+        if (auditEventPublisher != null) {
+            auditEventPublisher.publish(user.getId(), user.getEmail(), com.redis.audit.entity.AuditActionType.PASSWORD_CHANGED, com.redis.audit.entity.AuditStatus.SUCCESS,
+                    com.redis.common.entity.ResourceType.USER, String.valueOf(user.getId()), "User changed password successfully");
+        }
     }
 }

@@ -15,4 +15,7 @@ public interface UserService {
 
     // Retrieves user details by email
     UserResponse getUserByEmail(String email);
+
+    // Changes password for authenticated user with validation
+    void changePassword(Long userId, com.redis.user.dto.request.ChangePasswordRequest request);
 }

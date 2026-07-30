@@ -6,6 +6,7 @@ import lombok.Getter;
 public enum NotificationTemplate {
     WELCOME("welcome"),
     PASSWORD_RESET("password_reset"),
+    PASSWORD_CHANGED("password_changed"),
     ORDER_PLACED("order_placed"),
     PAYMENT_SUCCESS("payment_success"),
     PAYMENT_FAILED("payment_failed"),

@@ -6,6 +6,7 @@ public enum AuditActionType {
     LOGOUT,
     REGISTER,
     PASSWORD_RESET,
+    PASSWORD_CHANGED,
     TOKEN_REFRESH,
     TOKEN_REVOKED,
     ACCESS_DENIED,

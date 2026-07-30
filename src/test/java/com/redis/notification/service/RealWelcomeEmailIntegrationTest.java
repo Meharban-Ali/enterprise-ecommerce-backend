@@ -40,8 +40,6 @@ public class RealWelcomeEmailIntegrationTest {
                 .username("supportecommerces")
                 .email("supportecommerces@gmail.com")
                 .password("Password123!")
-                .securityQuestion("Quest")
-                .securityAnswer("Answ")
                 .build();
 
         System.out.println("TEST START: Registering user to trigger welcome email...");

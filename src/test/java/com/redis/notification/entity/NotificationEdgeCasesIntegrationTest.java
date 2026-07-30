@@ -99,6 +99,7 @@ public class NotificationEdgeCasesIntegrationTest {
     @BeforeEach
     void setUp() {
         notificationProperties.setTemplateManagementEnabled(false);
+        Mockito.reset(mailClient);
         Mockito.doNothing().when(mailClient).sendEmail(anyString(), anyString(), anyString(), anyBoolean());
 
         outboxRepository.deleteAll();
@@ -177,6 +178,7 @@ public class NotificationEdgeCasesIntegrationTest {
         assertTrue(body.contains("Pro Laptop"), "Email body must contain product name 'Pro Laptop'");
         assertTrue(body.contains("Wireless Mouse"), "Email body must contain product name 'Wireless Mouse'");
         assertTrue(body.contains("1100.00"), "Email body must contain correct total amount '1100.00'");
+        assertTrue(body.contains("edgeuser"), "Email body must contain actual customer username 'edgeuser'");
     }
 
     @Test
@@ -231,6 +233,7 @@ public class NotificationEdgeCasesIntegrationTest {
         String body = bodyCaptor.getValue();
         assertTrue(body.contains("200.00"), "Email body must contain actual partial refund amount '200.00' from Refund record, NOT original payment total '1000.00'");
         assertTrue(body.contains("Refund"), "Email body must reference refund");
+        assertTrue(body.contains("edgeuser"), "Email body must contain actual customer username 'edgeuser'");
     }
 
     @Test
@@ -287,6 +290,7 @@ public class NotificationEdgeCasesIntegrationTest {
         Mockito.verify(mailClient).sendEmail(anyString(), anyString(), bodyCaptor.capture(), anyBoolean());
         String body = bodyCaptor.getValue();
         assertTrue(body.contains(expectedResetUrl), "Email body must contain exact structured reset URL: " + expectedResetUrl);
+        assertTrue(body.contains("edgeuser"), "Email body must contain actual customer username 'edgeuser'");
     }
 
     @Test
@@ -324,6 +328,43 @@ public class NotificationEdgeCasesIntegrationTest {
         executor.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS);
 
         assertEquals(1, successCount.get(), "Exactly ONE thread should successfully claim the atomic outbox event!");
+    }
+
+    @Test
+    @Transactional
+    void testPasswordChangedEmail_RendersCorrectContentAndSupportContact() {
+        Notification notification = Notification.builder()
+                .user(testUser)
+                .title("Password Changed Successfully")
+                .message("Your account password has been updated. If you did not make this change, contact support immediately.")
+                .type(NotificationType.SECURITY)
+                .channel(NotificationChannel.EMAIL)
+                .priority(NotificationPriority.HIGH)
+                .status(NotificationStatus.PENDING)
+                .build();
+        notification = notificationRepository.save(notification);
+
+        Mockito.reset(mailClient);
+        Mockito.doNothing().when(mailClient).sendEmail(anyString(), anyString(), anyString(), anyBoolean());
+
+        emailNotificationService.send(notification);
+
+        ArgumentCaptor<String> emailCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> subjectCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> bodyCaptor = ArgumentCaptor.forClass(String.class);
+
+        Mockito.verify(mailClient).sendEmail(emailCaptor.capture(), subjectCaptor.capture(), bodyCaptor.capture(), anyBoolean());
+
+        assertEquals("edge@example.com", emailCaptor.getValue());
+        assertEquals("Password Changed Successfully", subjectCaptor.getValue());
+
+        String renderedHtml = bodyCaptor.getValue();
+        assertNotNull(renderedHtml);
+        assertTrue(renderedHtml.contains("edgeuser"), "Email body must contain customer username");
+        assertTrue(renderedHtml.contains("Password Changed Successfully"), "Email body must contain title");
+        assertTrue(renderedHtml.contains("Security Notice:"), "Email body must contain Security Notice header");
+        assertTrue(renderedHtml.contains("If you did not make this change, please contact support immediately"), "Email body must contain support notice text");
+        assertTrue(renderedHtml.contains("supportecommerces@gmail.com"), "Email body must contain correct supportContact email");
     }
 
     @AfterEach

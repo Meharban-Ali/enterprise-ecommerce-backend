@@ -54,9 +54,9 @@ public class NotificationWorkflowIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        notificationRepository.deleteAll();
-        cartRepository.deleteAll();
-        userRepository.deleteAll();
+        notificationRepository.deleteAllInBatch();
+        cartRepository.deleteAllInBatch();
+        userRepository.deleteAllInBatch();
 
         testUser = User.builder()
                 .username("workflowuser")

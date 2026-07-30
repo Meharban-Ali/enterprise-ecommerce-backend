@@ -78,10 +78,12 @@ public class User extends AuditableEntity implements UserDetails, java.io.Serial
     @Column(name = "phone", length = 20)
     private String phone;
 
-    // ─── Security Question Fields ────────────────────────────────────────────────
+    // ─── Security Question Fields (Deprecated — Retained for DB schema compatibility) ─────────────
+    @Deprecated
     @Column(name = "security_question", length = 255)
     private String securityQuestion;
 
+    @Deprecated
     @Column(name = "security_answer", length = 255)
     private String securityAnswer;
 

@@ -31,6 +31,12 @@ class UserServiceImplTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private com.redis.auth.service.RefreshTokenService refreshTokenService;
+
+    @Mock
+    private com.redis.notification.event.NotificationEventPublisher notificationEventPublisher;
+
     @InjectMocks
     private UserServiceImpl userService;
 
@@ -104,33 +110,109 @@ class UserServiceImplTest {
             verify(passwordEncoder, never()).encode(anyString());
             verify(userRepository, never()).save(any(User.class));
         }
+    }
+
+    @Nested
+    @DisplayName("changePassword() Tests")
+    class ChangePasswordTests {
 
         @Test
-        @DisplayName("❌ Failure: Should throw IllegalArgumentException when security question is provided but answer is missing")
-        void registerUser_ThrowsIllegalArgumentException_QuestionWithoutAnswer() {
-            // Arrange
-            testRequest.setSecurityQuestion("What is your pet's name?");
-            testRequest.setSecurityAnswer("");
+        @DisplayName("✅ Success: Should change password when correct old password and valid new password are provided")
+        void changePassword_Success() {
+            com.redis.user.dto.request.ChangePasswordRequest req = com.redis.user.dto.request.ChangePasswordRequest.builder()
+                    .oldPassword("OldPassword123!")
+                    .newPassword("NewPassword456!")
+                    .confirmPassword("NewPassword456!")
+                    .build();
 
-            // Act & Assert
-            assertThatThrownBy(() -> userService.registerUser(testRequest))
+            when(userRepository.findById(100L)).thenReturn(java.util.Optional.of(testUser));
+            when(passwordEncoder.matches("OldPassword123!", testUser.getPassword())).thenReturn(true);
+            when(passwordEncoder.encode("NewPassword456!")).thenReturn("EncodedNewPassword456!");
+
+            userService.changePassword(100L, req);
+
+            verify(passwordEncoder).encode("NewPassword456!");
+            verify(userRepository).save(testUser);
+            verify(refreshTokenService).deleteByUserId(100L);
+        }
+
+        @Test
+        @DisplayName("✅ Success: Should trigger password change confirmation email using ArgumentCaptor")
+        void changePassword_TriggersNotificationEmail_WithCorrectUserEmail() {
+            com.redis.user.dto.request.ChangePasswordRequest req = com.redis.user.dto.request.ChangePasswordRequest.builder()
+                    .oldPassword("OldPassword123!")
+                    .newPassword("NewPassword456!")
+                    .confirmPassword("NewPassword456!")
+                    .build();
+
+            when(userRepository.findById(100L)).thenReturn(java.util.Optional.of(testUser));
+            when(passwordEncoder.matches("OldPassword123!", testUser.getPassword())).thenReturn(true);
+            when(passwordEncoder.encode("NewPassword456!")).thenReturn("EncodedNewPassword456!");
+
+            userService.changePassword(100L, req);
+
+            org.mockito.ArgumentCaptor<Long> userIdCaptor = org.mockito.ArgumentCaptor.forClass(Long.class);
+            org.mockito.ArgumentCaptor<String> emailCaptor = org.mockito.ArgumentCaptor.forClass(String.class);
+
+            verify(notificationEventPublisher).publishPasswordChanged(userIdCaptor.capture(), emailCaptor.capture());
+
+            assertThat(userIdCaptor.getValue()).isEqualTo(100L);
+            assertThat(emailCaptor.getValue()).isEqualTo("john@example.com");
+        }
+
+        @Test
+        @DisplayName("❌ Failure: Should throw IllegalArgumentException when old password is incorrect")
+        void changePassword_WrongOldPassword_ThrowsException() {
+            com.redis.user.dto.request.ChangePasswordRequest req = com.redis.user.dto.request.ChangePasswordRequest.builder()
+                    .oldPassword("WrongOldPassword123!")
+                    .newPassword("NewPassword456!")
+                    .confirmPassword("NewPassword456!")
+                    .build();
+
+            when(userRepository.findById(100L)).thenReturn(java.util.Optional.of(testUser));
+            when(passwordEncoder.matches("WrongOldPassword123!", testUser.getPassword())).thenReturn(false);
+
+            assertThatThrownBy(() -> userService.changePassword(100L, req))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("Both security question and security answer must be provided");
+                    .hasMessageContaining("Current password does not match");
 
             verify(userRepository, never()).save(any(User.class));
         }
 
         @Test
-        @DisplayName("❌ Failure: Should throw IllegalArgumentException when security answer is provided but question is missing")
-        void registerUser_ThrowsIllegalArgumentException_AnswerWithoutQuestion() {
-            // Arrange
-            testRequest.setSecurityQuestion(null);
-            testRequest.setSecurityAnswer("Fido");
+        @DisplayName("❌ Failure: Should throw IllegalArgumentException when new password and confirm password differ")
+        void changePassword_ConfirmMismatch_ThrowsException() {
+            com.redis.user.dto.request.ChangePasswordRequest req = com.redis.user.dto.request.ChangePasswordRequest.builder()
+                    .oldPassword("OldPassword123!")
+                    .newPassword("NewPassword456!")
+                    .confirmPassword("DifferentPassword456!")
+                    .build();
 
-            // Act & Assert
-            assertThatThrownBy(() -> userService.registerUser(testRequest))
+            when(userRepository.findById(100L)).thenReturn(java.util.Optional.of(testUser));
+            when(passwordEncoder.matches("OldPassword123!", testUser.getPassword())).thenReturn(true);
+
+            assertThatThrownBy(() -> userService.changePassword(100L, req))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("Both security question and security answer must be provided");
+                    .hasMessageContaining("New password and confirm password do not match");
+
+            verify(userRepository, never()).save(any(User.class));
+        }
+
+        @Test
+        @DisplayName("❌ Failure: Should throw IllegalArgumentException when new password is identical to old password")
+        void changePassword_SamePassword_ThrowsException() {
+            com.redis.user.dto.request.ChangePasswordRequest req = com.redis.user.dto.request.ChangePasswordRequest.builder()
+                    .oldPassword("OldPassword123!")
+                    .newPassword("OldPassword123!")
+                    .confirmPassword("OldPassword123!")
+                    .build();
+
+            when(userRepository.findById(100L)).thenReturn(java.util.Optional.of(testUser));
+            when(passwordEncoder.matches("OldPassword123!", testUser.getPassword())).thenReturn(true);
+
+            assertThatThrownBy(() -> userService.changePassword(100L, req))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("New password cannot be the same as the current password");
 
             verify(userRepository, never()).save(any(User.class));
         }

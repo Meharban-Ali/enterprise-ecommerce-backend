@@ -72,8 +72,6 @@ public class AuditIntegrationTest {
                 .username("audited_user")
                 .email("audit@example.com")
                 .password("Password123!")
-                .securityQuestion("Quest")
-                .securityAnswer("Answ")
                 .build();
 
         userService.registerUser(request);

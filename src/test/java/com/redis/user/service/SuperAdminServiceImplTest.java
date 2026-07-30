@@ -183,13 +183,10 @@ class SuperAdminServiceImplTest {
                 .username("newadmin")
                 .email("admin@ecommerce.com")
                 .password("Password@123")
-                .securityQuestion("School?")
-                .securityAnswer("HighSchool")
                 .build();
 
         when(userRepository.existsByEmail("admin@ecommerce.com")).thenReturn(false);
         when(passwordEncoder.encode("Password@123")).thenReturn("encoded_pass");
-        when(passwordEncoder.encode("HighSchool")).thenReturn("encoded_ans");
         
         User adminUser = User.builder()
                 .id(15L)
