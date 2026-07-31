@@ -65,14 +65,10 @@ public class SecurityConfig {
             // 3. Set request authorization rules
             .authorizeHttpRequests(auth -> auth
                 // Public auth endpoints
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/auth/**")).permitAll()
+                .requestMatchers("/api/auth/**").permitAll()
                 // Public product and category catalog endpoints for guest shoppers & seeding
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/products")).permitAll()
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/products/**")).permitAll()
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/categories")).permitAll()
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/categories/**")).permitAll()
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/seed")).permitAll()
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/seed/**")).permitAll()
+                .requestMatchers("/api/products", "/api/products/**", "/api/categories", "/api/categories/**", "/api/seed", "/api/seed/**").permitAll()
+
 
 
 
