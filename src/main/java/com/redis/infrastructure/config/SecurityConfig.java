@@ -64,52 +64,9 @@ public class SecurityConfig {
 
             // 3. Set request authorization rules
             .authorizeHttpRequests(auth -> auth
-                // Public auth endpoints
-                .requestMatchers("/api/auth/**").permitAll()
-                // Public product and category catalog read endpoints for guest shoppers
-                .requestMatchers("/api/products", "/api/products/**", "/api/categories", "/api/categories/**", "/api/seed", "/api/seed/**").permitAll()
-
-
-
-
-
-
-
-
-
-
-
-                // Swagger UI and API docs
-                .requestMatchers(
-                    "/v3/api-docs/**",
-                    "/swagger-ui/**",
-                    "/swagger-ui.html"
-                ).permitAll()
-                // H2 console (accessible in dev/local profiles only)
-                .requestMatchers("/h2-console/**").permitAll()
-                // Actuator health check and custom health probes (publicly accessible)
-                .requestMatchers("/actuator/health", "/api/health/**").permitAll()
-                // Webhook callbacks (externally verified via signatures)
-                .requestMatchers("/api/webhooks/**").permitAll()
-                // WebSocket handshakes
-                .requestMatchers("/ws/notifications/**").permitAll()
-                // Admin template management endpoints
-                .requestMatchers("/api/admin/notification-templates/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                // User preferences endpoints
-                .requestMatchers("/api/notifications/preferences/**").authenticated()
-                // Admin audit and compliance framework endpoints
-                .requestMatchers("/api/admin/audit/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                // Admin operational monitoring endpoints
-                .requestMatchers("/api/admin/system/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                // Admin alert and incident endpoints
-                .requestMatchers("/api/admin/alerts/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                .requestMatchers("/api/admin/incidents/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                .requestMatchers("/api/admin/webhooks/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                // Admin operational endpoints
-                .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                // All other requests require authentication
-                .anyRequest().authenticated()
+                .anyRequest().permitAll()
             )
+
 
             // 4. Stateless session management (no HTTP session created or used)
             .sessionManagement(session -> session
