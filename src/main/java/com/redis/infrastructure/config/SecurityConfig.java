@@ -67,9 +67,10 @@ public class SecurityConfig {
                 // Public auth endpoints
                 .requestMatchers("/api/auth/**").permitAll()
                 // Public product and category catalog endpoints for guest shoppers & seeding
-                .requestMatchers("/api/products/**").permitAll()
-                .requestMatchers("/api/categories/**").permitAll()
-                .requestMatchers("/api/seed/**").permitAll()
+                .requestMatchers("/api/products", "/api/products/**").permitAll()
+                .requestMatchers("/api/categories", "/api/categories/**").permitAll()
+                .requestMatchers("/api/seed", "/api/seed/**").permitAll()
+
 
 
 
