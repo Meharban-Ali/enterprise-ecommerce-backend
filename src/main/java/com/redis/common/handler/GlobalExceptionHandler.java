@@ -107,13 +107,14 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage(), "INVALID_PAYMENT_STATE"));
     }
 
-    @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ApiResponse<Void>> handleBadCredentials(BadCredentialsException ex) {
-        log.warn("Authentication failed — bad credentials: {}", ex.getMessage());
+    @ExceptionHandler({BadCredentialsException.class, org.springframework.security.authentication.InternalAuthenticationServiceException.class, org.springframework.security.core.AuthenticationException.class})
+    public ResponseEntity<ApiResponse<Void>> handleBadCredentials(Exception ex) {
+        log.warn("Authentication failed: {} - {}", ex.getClass().getName(), ex.getMessage(), ex);
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.error("Invalid email or password", "BAD_CREDENTIALS"));
+                .body(ApiResponse.error("Invalid email or password (" + ex.getMessage() + ")", "BAD_CREDENTIALS"));
     }
+
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException ex) {
