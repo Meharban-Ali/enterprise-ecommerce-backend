@@ -67,7 +67,7 @@ public class ProductController {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')") // allowed for both users and admins
+ // allowed for both users and admins
     @Operation(summary = "Get product by ID", description = "Fetches a product by ID with Redis cache support")
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Product found"),
@@ -95,7 +95,7 @@ public class ProductController {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+
     @Operation(summary = "Get all products (paginated)", description = "Retrieves all products with pagination and sorting support")
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Products retrieved successfully")
@@ -171,7 +171,7 @@ public class ProductController {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @GetMapping("/search")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+
     @Operation(summary = "Search products by name", description = "Searches products by name (case-insensitive, paginated)")
     public ResponseEntity<ApiResponse<Page<ProductResponse>>> searchProducts(
             @RequestParam String name,
@@ -192,7 +192,7 @@ public class ProductController {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @GetMapping("/price-range")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+
     @Operation(summary = "Filter products by price range", description = "Gets products within a specified price range")
     public ResponseEntity<ApiResponse<Page<ProductResponse>>> getByPriceRange(
             @RequestParam BigDecimal minPrice,
@@ -210,7 +210,7 @@ public class ProductController {
     }
 
     @GetMapping("/affordable")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+
     @Operation(summary = "Get affordable products in stock", description = "Filters in-stock products priced at or below maxPrice (paginated)")
     public ResponseEntity<ApiResponse<Page<ProductResponse>>> getAffordableProducts(
             @RequestParam BigDecimal maxPrice,
@@ -230,7 +230,7 @@ public class ProductController {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @GetMapping("/rating")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+
     @Operation(summary = "Get products by minimum rating", description = "Filters products with a minimum rating (paginated)")
     public ResponseEntity<ApiResponse<Page<ProductResponse>>> getByMinRating(
             @RequestParam BigDecimal minRating,
@@ -320,7 +320,7 @@ public class ProductController {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @GetMapping("/cache-demo/{id}")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+
     @Operation(summary = "Cache demo endpoint", description = "Demonstrates Redis cache hit/miss for a product")
     public ResponseEntity<ApiResponse<ProductResponse>> cacheDemoEndpoint(
             @PathVariable Long id) {
