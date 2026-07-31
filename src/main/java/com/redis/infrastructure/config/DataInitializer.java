@@ -41,7 +41,9 @@ public class DataInitializer implements CommandLineRunner {
     private com.redis.audit.event.AuditEventPublisher auditEventPublisher;
 
     @Override
+    @org.springframework.context.event.EventListener(org.springframework.boot.context.event.ApplicationReadyEvent.class)
     public void run(String... args) {
+
         log.info("DataInitializer running: Checking system initial requirements...");
         
         try {
