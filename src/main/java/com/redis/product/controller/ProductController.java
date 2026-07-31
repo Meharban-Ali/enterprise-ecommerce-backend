@@ -276,14 +276,15 @@ public class ProductController {
                 ApiResponse.success("Out of stock products", products));
     }
 
-    @PostMapping("/seed")
+    @PostMapping("/seed-data")
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @Operation(summary = "Seed sample products and categories", description = "Populates initial products and categories if empty")
     public ResponseEntity<ApiResponse<String>> seedProducts() {
-        log.info("POST /api/products/seed — manual seed requested");
+        log.info("POST /api/products/seed-data — manual seed requested");
         long seeded = productService.seedSampleData();
         return ResponseEntity.ok(ApiResponse.success("Seeded " + seeded + " sample products successfully", "OK"));
     }
+
 
     // ═══════════════════════════════════════════════════════════════════════════
     //  CACHE MANAGEMENT
