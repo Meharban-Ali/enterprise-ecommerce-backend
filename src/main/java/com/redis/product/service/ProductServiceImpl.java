@@ -124,10 +124,12 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional(readOnly = true)
     @Cacheable(
-        value = RedisCacheConfig.CACHE_PRODUCTS,
-        key   = "'page_' + #pageable.pageNumber + '_size_' + #pageable.pageSize"
+        value  = RedisCacheConfig.CACHE_PRODUCTS,
+        key    = "'page_' + #pageable.pageNumber + '_size_' + #pageable.pageSize + '_sort_' + #pageable.sort.toString()",
+        unless = "#result == null || #result.empty"
     )
     public Page<ProductResponse> getAllProducts(Pageable pageable) {
+
         log.info("DB hit — fetching all products, page: {}", pageable.getPageNumber());
 
         Page<ProductResponse> result = productRepository
