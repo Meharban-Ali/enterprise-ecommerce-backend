@@ -140,14 +140,21 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         }
         }
 
-        if (limit == Integer.MAX_VALUE) {
-            filterChain.doFilter(httpRequest, httpResponse);
-            return;
+        boolean allowed = true;
+        try {
+            allowed = rateLimitService.isAllowed(limitKey, limit, window);
+        } catch (Exception e) {
+            log.warn("RateLimitService check failed for key {}: {} — bypassing rate limit filter", limitKey, e.getMessage());
+            allowed = true;
         }
 
-        boolean allowed = rateLimitService.isAllowed(limitKey, limit, window);
         if (!allowed) {
-            int retryAfter = rateLimitService.getRetryAfterSeconds(limitKey, limit, window);
+            int retryAfter = 60;
+            try {
+                retryAfter = rateLimitService.getRetryAfterSeconds(limitKey, limit, window);
+            } catch (Exception e) {
+                log.warn("Failed to get retry after seconds: {}", e.getMessage());
+            }
             httpResponse.setStatus(429);
             httpResponse.setHeader("Retry-After", String.valueOf(retryAfter));
             httpResponse.setContentType("application/json");
@@ -155,26 +162,15 @@ public class RateLimitingFilter extends OncePerRequestFilter {
             httpResponse.getWriter().flush();
 
             if (abuseDetectionService != null) {
-                abuseDetectionService.recordViolation(clientIp, "RATE_LIMIT_EXCEEDED");
+                try { abuseDetectionService.recordViolation(clientIp, "RATE_LIMIT_EXCEEDED"); } catch (Exception ignored) {}
             }
             
             httpRequest.setAttribute("rateLimitExceeded", true);
             httpRequest.setAttribute("consumerKey", limitKey);
-
-            if (auditEventPublisher != null) {
-                auditEventPublisher.publish(
-                        null,
-                        auth != null ? auth.getName() : "anonymous@ecommerce.com",
-                        AuditActionType.RATE_LIMIT_EXCEEDED,
-                        com.redis.audit.entity.AuditStatus.FAILED,
-                        com.redis.common.entity.ResourceType.SYSTEM,
-                        "0",
-                        "Rate limit exceeded for client: " + limitKey
-                );
-            }
             return;
         }
 
         filterChain.doFilter(httpRequest, httpResponse);
+
     }
 }
