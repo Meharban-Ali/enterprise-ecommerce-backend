@@ -283,11 +283,13 @@ public class ProductController {
             log.info("GET /api/products/seed-now — manual seed requested");
             long seeded = productService.seedSampleData();
             return ResponseEntity.ok(ApiResponse.success("Seeded " + seeded + " sample products successfully", "OK"));
-        } catch (Exception e) {
+        } catch (Throwable e) {
             log.error("SEED EXCEPTION: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).body(ApiResponse.error("Seed error: " + e.getClass().getSimpleName() + " - " + e.getMessage(), "SEED_ERROR"));
+            String cause = e.getCause() != null ? " | Cause: " + e.getCause().getMessage() : "";
+            return ResponseEntity.ok(ApiResponse.success("SEED_FAILED: " + e.getClass().getName() + " - " + e.getMessage() + cause, "ERROR"));
         }
     }
+
 
 
 
