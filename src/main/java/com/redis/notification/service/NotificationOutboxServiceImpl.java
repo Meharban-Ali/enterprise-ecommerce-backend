@@ -72,7 +72,12 @@ public class NotificationOutboxServiceImpl implements NotificationOutboxService 
                     .payload(payloadJson)
                     .status(OutboxStatus.PENDING)
                     .retryCount(0)
+                    .createdBy("system")
+                    .updatedBy("system")
+                    .createdAt(java.time.LocalDateTime.now())
+                    .updatedAt(java.time.LocalDateTime.now())
                     .build();
+
 
             outboxRepository.save(outbox);
             log.info("OBSERVABILITY - OUTBOX_CREATED: outboxId={}, eventType={}, userId={}",
