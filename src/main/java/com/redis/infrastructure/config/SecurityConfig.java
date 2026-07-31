@@ -68,6 +68,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 // Public product and category catalog read endpoints for guest shoppers
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/products", "/api/products/**", "/api/categories", "/api/categories/**").permitAll()
+                .requestMatchers("/api/seed", "/api/seed/**").permitAll()
+
 
 
 

@@ -34,11 +34,11 @@ public class DataSeedController {
         Map<String, Category> categoryMap = new HashMap<>();
 
         List<Category> categoriesToSeed = List.of(
-            Category.builder().name("Smartphones & Tablets").description("Latest flagship smartphones, mobile devices and accessories").build(),
-            Category.builder().name("Computers & Laptops").description("High-performance gaming laptops, desktop PCs and peripherals").build(),
-            Category.builder().name("Audio & Accessories").description("Premium noise-canceling headphones, wireless earbuds and speakers").build(),
-            Category.builder().name("Electronics & Gadgets").description("High-tech devices, smart monitors, and entertainment systems").build(),
-            Category.builder().name("Home & Appliances").description("Modern smart home equipment, coffee makers and daily appliances").build()
+            Category.builder().name("Smartphones & Tablets").description("Latest flagship smartphones, mobile devices and accessories").createdBy("system").updatedBy("system").createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
+            Category.builder().name("Computers & Laptops").description("High-performance gaming laptops, desktop PCs and peripherals").createdBy("system").updatedBy("system").createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
+            Category.builder().name("Audio & Accessories").description("Premium noise-canceling headphones, wireless earbuds and speakers").createdBy("system").updatedBy("system").createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
+            Category.builder().name("Electronics & Gadgets").description("High-tech devices, smart monitors, and entertainment systems").createdBy("system").updatedBy("system").createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
+            Category.builder().name("Home & Appliances").description("Modern smart home equipment, coffee makers and daily appliances").createdBy("system").updatedBy("system").createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build()
         );
 
         for (Category cat : categoriesToSeed) {
@@ -55,17 +55,18 @@ public class DataSeedController {
         Category catHome = categoryMap.get("Home & Appliances");
 
         List<Product> products = List.of(
-            Product.builder().name("iPhone 15 Pro Max 256GB").price(new BigDecimal("134900.00")).rating(new BigDecimal("4.8")).stockQuantity(150).category(catSmartphones).build(),
-            Product.builder().name("Samsung Galaxy S24 Ultra").price(new BigDecimal("129999.00")).rating(new BigDecimal("4.7")).stockQuantity(120).category(catSmartphones).build(),
-            Product.builder().name("ASUS ROG Strix Gaming Laptop").price(new BigDecimal("145000.00")).rating(new BigDecimal("4.9")).stockQuantity(45).category(catComputers).build(),
-            Product.builder().name("Sony WH-1000XM5 ANC Headphones").price(new BigDecimal("29990.00")).rating(new BigDecimal("4.8")).stockQuantity(200).category(catAudio).build(),
-            Product.builder().name("Apple MacBook Air M3 16GB").price(new BigDecimal("114900.00")).rating(new BigDecimal("4.9")).stockQuantity(80).category(catComputers).build(),
-            Product.builder().name("Dell UltraSharp 27 inch 4K USB-C Monitor").price(new BigDecimal("54990.00")).rating(new BigDecimal("4.6")).stockQuantity(60).category(catElectronics).build(),
-            Product.builder().name("Bose QuietComfort Ultra Earbuds").price(new BigDecimal("24900.00")).rating(new BigDecimal("4.7")).stockQuantity(110).category(catAudio).build(),
-            Product.builder().name("iPad Air M2 11-inch").price(new BigDecimal("59900.00")).rating(new BigDecimal("4.8")).stockQuantity(95).category(catSmartphones).build(),
-            Product.builder().name("Dyson V15 Detect Vacuum Cleaner").price(new BigDecimal("62900.00")).rating(new BigDecimal("4.6")).stockQuantity(30).category(catHome).build(),
-            Product.builder().name("Nespresso Vertuo Pop Coffee Machine").price(new BigDecimal("16990.00")).rating(new BigDecimal("4.5")).stockQuantity(85).category(catHome).build()
+            Product.builder().name("iPhone 15 Pro Max 256GB").price(new BigDecimal("134900.00")).rating(new BigDecimal("4.8")).stockQuantity(150).category(catSmartphones).createdBy("system").updatedBy("system").createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
+            Product.builder().name("Samsung Galaxy S24 Ultra").price(new BigDecimal("129999.00")).rating(new BigDecimal("4.7")).stockQuantity(120).category(catSmartphones).createdBy("system").updatedBy("system").createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
+            Product.builder().name("ASUS ROG Strix Gaming Laptop").price(new BigDecimal("145000.00")).rating(new BigDecimal("4.9")).stockQuantity(45).category(catComputers).createdBy("system").updatedBy("system").createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
+            Product.builder().name("Sony WH-1000XM5 ANC Headphones").price(new BigDecimal("29990.00")).rating(new BigDecimal("4.8")).stockQuantity(200).category(catAudio).createdBy("system").updatedBy("system").createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
+            Product.builder().name("Apple MacBook Air M3 16GB").price(new BigDecimal("114900.00")).rating(new BigDecimal("4.9")).stockQuantity(80).category(catComputers).createdBy("system").updatedBy("system").createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
+            Product.builder().name("Dell UltraSharp 27 inch 4K USB-C Monitor").price(new BigDecimal("54990.00")).rating(new BigDecimal("4.6")).stockQuantity(60).category(catElectronics).createdBy("system").updatedBy("system").createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
+            Product.builder().name("Bose QuietComfort Ultra Earbuds").price(new BigDecimal("24900.00")).rating(new BigDecimal("4.7")).stockQuantity(110).category(catAudio).createdBy("system").updatedBy("system").createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
+            Product.builder().name("iPad Air M2 11-inch").price(new BigDecimal("59900.00")).rating(new BigDecimal("4.8")).stockQuantity(95).category(catSmartphones).createdBy("system").updatedBy("system").createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
+            Product.builder().name("Dyson V15 Detect Vacuum Cleaner").price(new BigDecimal("62900.00")).rating(new BigDecimal("4.6")).stockQuantity(30).category(catHome).createdBy("system").updatedBy("system").createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
+            Product.builder().name("Nespresso Vertuo Pop Coffee Machine").price(new BigDecimal("16990.00")).rating(new BigDecimal("4.5")).stockQuantity(85).category(catHome).createdBy("system").updatedBy("system").createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build()
         );
+
 
         int count = 0;
         for (Product p : products) {
