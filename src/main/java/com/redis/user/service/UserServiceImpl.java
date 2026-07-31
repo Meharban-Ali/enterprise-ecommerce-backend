@@ -54,9 +54,11 @@ public class UserServiceImpl implements UserService {
                 .password(passwordEncoder.encode(request.getPassword())) // BCrypt hashing
                 .role((request.getEmail() != null && request.getEmail().toLowerCase().contains("admin")) ? Role.ROLE_ADMIN : Role.ROLE_USER)
                 .accountEnabled(true) // Default enabled
-
                 .accountNonLocked(true) // Default unlocked
+                .createdBy("system")
+                .updatedBy("system")
                 .build();
+
 
         // 4. Persist entity
         User savedUser = userRepository.save(user);
