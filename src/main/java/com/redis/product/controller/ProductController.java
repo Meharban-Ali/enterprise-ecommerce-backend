@@ -276,11 +276,11 @@ public class ProductController {
                 ApiResponse.success("Out of stock products", products));
     }
 
-    @PostMapping("/seed-data")
+    @GetMapping("/seed-now")
     @Operation(summary = "Seed sample products and categories", description = "Populates initial products and categories if empty")
     public ResponseEntity<ApiResponse<String>> seedProducts() {
 
-        log.info("POST /api/products/seed-data — manual seed requested");
+        log.info("GET /api/products/seed-now — manual seed requested");
         long seeded = productService.seedSampleData();
         return ResponseEntity.ok(ApiResponse.success("Seeded " + seeded + " sample products successfully", "OK"));
     }
