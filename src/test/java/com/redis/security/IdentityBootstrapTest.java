@@ -39,7 +39,11 @@ public class IdentityBootstrapTest {
     private com.redis.product.repository.ProductRepository productRepository;
 
     @Autowired
+    private com.redis.category.repository.CategoryRepository categoryRepository;
+
+    @Autowired
     private com.redis.monitoring.repository.AlertRuleRepository alertRuleRepository;
+
 
     @Autowired
     private com.redis.infrastructure.config.DataInitializerProperties properties;
@@ -56,6 +60,7 @@ public class IdentityBootstrapTest {
         mockEnv.clear();
         dataInitializer = new TestDataInitializer(
                 productRepository,
+                categoryRepository,
                 userRepository,
                 alertRuleRepository,
                 passwordEncoder,
@@ -63,6 +68,7 @@ public class IdentityBootstrapTest {
                 jdbcTemplate,
                 mockEnv
         );
+
     }
 
     @Test
@@ -140,15 +146,17 @@ public class IdentityBootstrapTest {
 
         public TestDataInitializer(
                 com.redis.product.repository.ProductRepository productRepository,
+                com.redis.category.repository.CategoryRepository categoryRepository,
                 UserRepository userRepository,
                 com.redis.monitoring.repository.AlertRuleRepository alertRuleRepository,
                 PasswordEncoder passwordEncoder,
                 com.redis.infrastructure.config.DataInitializerProperties properties,
                 JdbcTemplate jdbcTemplate,
                 Map<String, String> env) {
-            super(productRepository, userRepository, alertRuleRepository, passwordEncoder, properties, jdbcTemplate);
+            super(productRepository, categoryRepository, userRepository, alertRuleRepository, passwordEncoder, properties, jdbcTemplate);
             this.env = env;
         }
+
 
         @Override
         protected String getEnv(String name) {

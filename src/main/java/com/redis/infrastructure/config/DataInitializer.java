@@ -30,14 +30,12 @@ import java.util.HashMap;
 public class DataInitializer implements CommandLineRunner {
 
     private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
     private final AlertRuleRepository alertRuleRepository;
     private final PasswordEncoder passwordEncoder;
     private final DataInitializerProperties properties;
     private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
-
-    @Autowired(required = false)
-    private CategoryRepository categoryRepository;
 
     @Autowired(required = false)
     private com.redis.audit.event.AuditEventPublisher auditEventPublisher;
@@ -163,106 +161,104 @@ public class DataInitializer implements CommandLineRunner {
         // 1. Categories
         Map<String, Category> categoryMap = new HashMap<>();
 
-        if (categoryRepository != null) {
-            List<Category> categoriesToSeed = List.of(
-                Category.builder().name("Smartphones & Tablets").description("Latest flagship smartphones, mobile devices and accessories").build(),
-                Category.builder().name("Computers & Laptops").description("High-performance gaming laptops, desktop PCs and peripherals").build(),
-                Category.builder().name("Audio & Accessories").description("Premium noise-canceling headphones, wireless earbuds and speakers").build(),
-                Category.builder().name("Electronics & Gadgets").description("High-tech devices, smart monitors, and entertainment systems").build(),
-                Category.builder().name("Home & Appliances").description("Modern smart home equipment, coffee makers and daily appliances").build()
-            );
+        List<Category> categoriesToSeed = List.of(
+            Category.builder().name("Smartphones & Tablets").description("Latest flagship smartphones, mobile devices and accessories").build(),
+            Category.builder().name("Computers & Laptops").description("High-performance gaming laptops, desktop PCs and peripherals").build(),
+            Category.builder().name("Audio & Accessories").description("Premium noise-canceling headphones, wireless earbuds and speakers").build(),
+            Category.builder().name("Electronics & Gadgets").description("High-tech devices, smart monitors, and entertainment systems").build(),
+            Category.builder().name("Home & Appliances").description("Modern smart home equipment, coffee makers and daily appliances").build()
+        );
 
-            for (Category cat : categoriesToSeed) {
-                Category saved = categoryRepository.findByNameIgnoreCase(cat.getName())
-                        .orElseGet(() -> categoryRepository.save(cat));
-                categoryMap.put(saved.getName(), saved);
-            }
-
-            log.info("{} categories seeded or verified.", categoryMap.size());
+        for (Category cat : categoriesToSeed) {
+            Category saved = categoryRepository.findByNameIgnoreCase(cat.getName())
+                    .orElseGet(() -> categoryRepository.save(cat));
+            categoryMap.put(saved.getName(), saved);
         }
 
+        log.info("{} categories seeded or verified.", categoryMap.size());
+
         // 2. Products
-        Category smartphonesCat = categoryMap.get("Smartphones & Tablets");
-        Category computersCat = categoryMap.get("Computers & Laptops");
-        Category audioCat = categoryMap.get("Audio & Accessories");
-        Category electronicsCat = categoryMap.get("Electronics & Gadgets");
-        Category homeCat = categoryMap.get("Home & Appliances");
+        Category catSmartphones = categoryMap.get("Smartphones & Tablets");
+        Category catComputers = categoryMap.get("Computers & Laptops");
+        Category catAudio = categoryMap.get("Audio & Accessories");
+        Category catElectronics = categoryMap.get("Electronics & Gadgets");
+        Category catHome = categoryMap.get("Home & Appliances");
 
         List<Product> sampleProducts = List.of(
             Product.builder()
-                .name("iPhone 15 Pro Max (256GB)")
+                .name("iPhone 15 Pro Max 256GB")
                 .price(new BigDecimal("134900.00"))
                 .rating(new BigDecimal("4.8"))
                 .stockQuantity(150)
-                .category(smartphonesCat)
+                .category(catSmartphones)
                 .build(),
             Product.builder()
                 .name("Samsung Galaxy S24 Ultra")
                 .price(new BigDecimal("129999.00"))
                 .rating(new BigDecimal("4.7"))
                 .stockQuantity(120)
-                .category(smartphonesCat)
+                .category(catSmartphones)
                 .build(),
             Product.builder()
                 .name("ASUS ROG Strix Gaming Laptop")
                 .price(new BigDecimal("145000.00"))
                 .rating(new BigDecimal("4.9"))
                 .stockQuantity(45)
-                .category(computersCat)
+                .category(catComputers)
                 .build(),
             Product.builder()
                 .name("Sony WH-1000XM5 ANC Headphones")
                 .price(new BigDecimal("29990.00"))
                 .rating(new BigDecimal("4.8"))
                 .stockQuantity(200)
-                .category(audioCat)
+                .category(catAudio)
                 .build(),
             Product.builder()
-                .name("Apple MacBook Air M3 (16GB)")
+                .name("Apple MacBook Air M3 16GB")
                 .price(new BigDecimal("114900.00"))
                 .rating(new BigDecimal("4.9"))
                 .stockQuantity(80)
-                .category(computersCat)
+                .category(catComputers)
                 .build(),
             Product.builder()
-                .name("Dell UltraSharp 27\" 4K USB-C Monitor")
+                .name("Dell UltraSharp 27 inch 4K USB-C Monitor")
                 .price(new BigDecimal("54990.00"))
                 .rating(new BigDecimal("4.6"))
                 .stockQuantity(60)
-                .category(electronicsCat)
+                .category(catElectronics)
                 .build(),
             Product.builder()
                 .name("Bose QuietComfort Ultra Earbuds")
                 .price(new BigDecimal("24900.00"))
                 .rating(new BigDecimal("4.7"))
                 .stockQuantity(110)
-                .category(audioCat)
+                .category(catAudio)
                 .build(),
             Product.builder()
-                .name("iPad Air M2 (11-inch)")
+                .name("iPad Air M2 11-inch")
                 .price(new BigDecimal("59900.00"))
                 .rating(new BigDecimal("4.8"))
                 .stockQuantity(95)
-                .category(smartphonesCat)
+                .category(catSmartphones)
                 .build(),
             Product.builder()
                 .name("Dyson V15 Detect Vacuum Cleaner")
                 .price(new BigDecimal("62900.00"))
                 .rating(new BigDecimal("4.6"))
                 .stockQuantity(30)
-                .category(homeCat)
+                .category(catHome)
                 .build(),
             Product.builder()
                 .name("Nespresso Vertuo Pop Coffee Machine")
                 .price(new BigDecimal("16990.00"))
                 .rating(new BigDecimal("4.5"))
                 .stockQuantity(85)
-                .category(homeCat)
+                .category(catHome)
                 .build()
         );
 
-        productRepository.saveAll(sampleProducts);
-        log.info("{} sample products seeded successfully", sampleProducts.size());
+        List<Product> saved = productRepository.saveAll(sampleProducts);
+        log.info("{} sample products seeded successfully", saved.size());
     }
 
     protected String getEnv(String name) {
