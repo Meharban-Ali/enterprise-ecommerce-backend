@@ -65,8 +65,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             // 2. Extract token and subject email
-            jwt = authHeader.substring(7);
+            jwt = authHeader.substring(7).trim();
+            if (jwt.isEmpty() || "null".equalsIgnoreCase(jwt) || "undefined".equalsIgnoreCase(jwt)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
             userEmail = jwtService.extractEmail(jwt);
+
 
             // Check if token is blacklisted in Redis
             RedisTemplate<String, Object> redisTemplate = redisTemplateProvider.getIfAvailable();
@@ -129,8 +134,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
 
         } catch (JwtException ex) {
-            log.warn("JWT validation failed: {}", ex.getMessage());
-            resolver.resolveException(request, response, null, ex);
+            log.warn("JWT validation failed for URI {}: {} — delegating to security chain", request.getRequestURI(), ex.getMessage());
+            SecurityContextHolder.clearContext();
+            filterChain.doFilter(request, response);
         }
+
     }
 }
