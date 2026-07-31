@@ -69,7 +69,8 @@ public class ProductController {
     //  READ — Single
     // ═══════════════════════════════════════════════════════════════════════════
 
-    @GetMapping("/{id}")
+    @GetMapping("/{id:\\d+}")
+
  // allowed for both users and admins
     @Operation(summary = "Get product by ID", description = "Fetches a product by ID with Redis cache support")
     @ApiResponses(value = {
