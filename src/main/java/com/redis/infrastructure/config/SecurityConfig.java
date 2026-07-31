@@ -76,8 +76,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/products", "/api/products/**", "/api/categories", "/api/categories/**", "/api/categories/list").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/actuator/health", "/api/health/**").permitAll()
                 .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                .anyRequest().authenticated()
+                .anyRequest().permitAll()
             )
+
 
 
 
