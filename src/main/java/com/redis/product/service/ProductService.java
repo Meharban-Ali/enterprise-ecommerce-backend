@@ -9,7 +9,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 public interface ProductService {
 
@@ -59,9 +58,12 @@ public interface ProductService {
     Page<ProductResponse> getOutOfStockProducts(Pageable pageable);
 
     // ═══════════════════════════════════════════════════════════════════════════
-    //  CACHE OPERATIONS
+    //  CACHE & SEED OPERATIONS
     // ═══════════════════════════════════════════════════════════════════════════
 
     /** Manually clears all product caches. Returns true if successful. */
     boolean clearProductCache();
+
+    /** Seeds sample categories and products into database on-demand. */
+    long seedSampleData();
 }
