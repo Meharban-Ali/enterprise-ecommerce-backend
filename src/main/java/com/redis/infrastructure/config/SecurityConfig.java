@@ -132,12 +132,9 @@ public class SecurityConfig {
                     .includeSubDomains(true)
                     .maxAgeInSeconds(31536000)
                 );
-                headers.contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'"));
                 headers.referrerPolicy(referrer -> referrer.policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER));
                 headers.permissionsPolicy(permissions -> permissions.policy("geolocation=(), camera=(), microphone=()"));
-                headers.addHeaderWriter(new org.springframework.security.web.header.writers.StaticHeadersWriter("Cross-Origin-Resource-Policy", "same-origin"));
-                headers.addHeaderWriter(new org.springframework.security.web.header.writers.StaticHeadersWriter("Cross-Origin-Embedder-Policy", "require-corp"));
-                headers.addHeaderWriter(new org.springframework.security.web.header.writers.StaticHeadersWriter("Cross-Origin-Opener-Policy", "same-origin"));
+                headers.addHeaderWriter(new org.springframework.security.web.header.writers.StaticHeadersWriter("Cross-Origin-Resource-Policy", "cross-origin"));
                 headers.addHeaderWriter(new org.springframework.security.web.header.writers.StaticHeadersWriter("Cache-Control", "no-store, max-age=0"));
                 headers.addHeaderWriter(new org.springframework.security.web.header.writers.StaticHeadersWriter("Pragma", "no-cache"));
                 headers.addHeaderWriter(new org.springframework.security.web.header.writers.StaticHeadersWriter("Expires", "0"));
@@ -158,15 +155,16 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(corsProperties.getAllowedOrigins());
+        configuration.addAllowedOriginPattern("*");
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Cache-Control", "X-Requested-With", "X-API-Key", "Idempotency-Key", "X-Correlation-ID"));
+        configuration.setAllowedHeaders(List.of("*"));
         configuration.setExposedHeaders(List.of("Authorization", "X-Correlation-ID"));
         configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+
 
     // ═══════════════════════════════════════════════════════════════════════════
     //  AUTHENTICATION BEANS
