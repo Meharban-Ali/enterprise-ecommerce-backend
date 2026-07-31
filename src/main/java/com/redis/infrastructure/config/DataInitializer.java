@@ -159,11 +159,11 @@ public class DataInitializer implements CommandLineRunner {
         Map<String, Category> categoryMap = new HashMap<>();
 
         List<Category> categoriesToSeed = List.of(
-            Category.builder().name("Smartphones & Tablets").description("Latest flagship smartphones, mobile devices and accessories").createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
-            Category.builder().name("Computers & Laptops").description("High-performance gaming laptops, desktop PCs and peripherals").createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
-            Category.builder().name("Audio & Accessories").description("Premium noise-canceling headphones, wireless earbuds and speakers").createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
-            Category.builder().name("Electronics & Gadgets").description("High-tech devices, smart monitors, and entertainment systems").createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
-            Category.builder().name("Home & Appliances").description("Modern smart home equipment, coffee makers and daily appliances").createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build()
+            Category.builder().name("Smartphones & Tablets").description("Latest flagship smartphones, mobile devices and accessories").createdBy("system").updatedBy("system").createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
+            Category.builder().name("Computers & Laptops").description("High-performance gaming laptops, desktop PCs and peripherals").createdBy("system").updatedBy("system").createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
+            Category.builder().name("Audio & Accessories").description("Premium noise-canceling headphones, wireless earbuds and speakers").createdBy("system").updatedBy("system").createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
+            Category.builder().name("Electronics & Gadgets").description("High-tech devices, smart monitors, and entertainment systems").createdBy("system").updatedBy("system").createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
+            Category.builder().name("Home & Appliances").description("Modern smart home equipment, coffee makers and daily appliances").createdBy("system").updatedBy("system").createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build()
         );
 
         for (Category cat : categoriesToSeed) {
@@ -192,6 +192,8 @@ public class DataInitializer implements CommandLineRunner {
                 .rating(new BigDecimal("4.8"))
                 .stockQuantity(150)
                 .category(catSmartphones)
+                .createdBy("system")
+                .updatedBy("system")
                 .createdAt(java.time.LocalDateTime.now())
                 .updatedAt(java.time.LocalDateTime.now())
                 .build(),
@@ -201,6 +203,8 @@ public class DataInitializer implements CommandLineRunner {
                 .rating(new BigDecimal("4.7"))
                 .stockQuantity(120)
                 .category(catSmartphones)
+                .createdBy("system")
+                .updatedBy("system")
                 .createdAt(java.time.LocalDateTime.now())
                 .updatedAt(java.time.LocalDateTime.now())
                 .build(),
@@ -210,6 +214,8 @@ public class DataInitializer implements CommandLineRunner {
                 .rating(new BigDecimal("4.9"))
                 .stockQuantity(45)
                 .category(catComputers)
+                .createdBy("system")
+                .updatedBy("system")
                 .createdAt(java.time.LocalDateTime.now())
                 .updatedAt(java.time.LocalDateTime.now())
                 .build(),
@@ -219,6 +225,8 @@ public class DataInitializer implements CommandLineRunner {
                 .rating(new BigDecimal("4.8"))
                 .stockQuantity(200)
                 .category(catAudio)
+                .createdBy("system")
+                .updatedBy("system")
                 .createdAt(java.time.LocalDateTime.now())
                 .updatedAt(java.time.LocalDateTime.now())
                 .build(),
@@ -228,6 +236,8 @@ public class DataInitializer implements CommandLineRunner {
                 .rating(new BigDecimal("4.9"))
                 .stockQuantity(80)
                 .category(catComputers)
+                .createdBy("system")
+                .updatedBy("system")
                 .createdAt(java.time.LocalDateTime.now())
                 .updatedAt(java.time.LocalDateTime.now())
                 .build(),
@@ -237,6 +247,8 @@ public class DataInitializer implements CommandLineRunner {
                 .rating(new BigDecimal("4.6"))
                 .stockQuantity(60)
                 .category(catElectronics)
+                .createdBy("system")
+                .updatedBy("system")
                 .createdAt(java.time.LocalDateTime.now())
                 .updatedAt(java.time.LocalDateTime.now())
                 .build(),
@@ -246,6 +258,8 @@ public class DataInitializer implements CommandLineRunner {
                 .rating(new BigDecimal("4.7"))
                 .stockQuantity(110)
                 .category(catAudio)
+                .createdBy("system")
+                .updatedBy("system")
                 .createdAt(java.time.LocalDateTime.now())
                 .updatedAt(java.time.LocalDateTime.now())
                 .build(),
@@ -255,6 +269,8 @@ public class DataInitializer implements CommandLineRunner {
                 .rating(new BigDecimal("4.8"))
                 .stockQuantity(95)
                 .category(catSmartphones)
+                .createdBy("system")
+                .updatedBy("system")
                 .createdAt(java.time.LocalDateTime.now())
                 .updatedAt(java.time.LocalDateTime.now())
                 .build(),
@@ -264,6 +280,8 @@ public class DataInitializer implements CommandLineRunner {
                 .rating(new BigDecimal("4.6"))
                 .stockQuantity(30)
                 .category(catHome)
+                .createdBy("system")
+                .updatedBy("system")
                 .createdAt(java.time.LocalDateTime.now())
                 .updatedAt(java.time.LocalDateTime.now())
                 .build(),
@@ -273,10 +291,13 @@ public class DataInitializer implements CommandLineRunner {
                 .rating(new BigDecimal("4.5"))
                 .stockQuantity(85)
                 .category(catHome)
+                .createdBy("system")
+                .updatedBy("system")
                 .createdAt(java.time.LocalDateTime.now())
                 .updatedAt(java.time.LocalDateTime.now())
                 .build()
         );
+
 
         int added = 0;
         for (Product prod : sampleProducts) {
