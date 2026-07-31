@@ -1,20 +1,19 @@
 package com.redis.infrastructure.config;
 
-import com.redis.notification.entity.Notification;
-import com.redis.payment.entity.Payment;
-import com.redis.infrastructure.config.DataInitializerProperties;
-
+import com.redis.category.entity.Category;
+import com.redis.category.repository.CategoryRepository;
 import com.redis.product.entity.Product;
+import com.redis.product.repository.ProductRepository;
 import com.redis.user.entity.Role;
 import com.redis.user.entity.User;
+import com.redis.user.repository.UserRepository;
 import com.redis.monitoring.entity.AlertRule;
 import com.redis.monitoring.entity.AlertSeverity;
 import com.redis.monitoring.entity.AlertSource;
-import com.redis.product.repository.ProductRepository;
-import com.redis.user.repository.UserRepository;
 import com.redis.monitoring.repository.AlertRuleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -22,6 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 @Slf4j
 @Component
@@ -35,7 +36,10 @@ public class DataInitializer implements CommandLineRunner {
     private final DataInitializerProperties properties;
     private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
-    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    @Autowired(required = false)
+    private CategoryRepository categoryRepository;
+
+    @Autowired(required = false)
     private com.redis.audit.event.AuditEventPublisher auditEventPublisher;
 
     @Override
@@ -54,16 +58,10 @@ public class DataInitializer implements CommandLineRunner {
             log.error("Failed to seed default alert rules: {}", ex.getMessage(), ex);
         }
 
-        if (!properties.isEnabled()) {
-            log.info("Sample product seeder is disabled — skipping product data seeding");
-            return;
-        }
-
-        log.info("Sample product seeder is enabled — checking if product data needs seeding...");
         try {
-            initializeProducts();
+            initializeCategoriesAndProducts();
         } catch (Exception ex) {
-            log.error("Failed to initialize sample product data: {}", ex.getMessage(), ex);
+            log.error("Failed to initialize sample category and product data: {}", ex.getMessage(), ex);
         }
     }
 
@@ -88,34 +86,6 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         log.info("IDENTITY_BOOTSTRAP | Starting secure Super Admin identity bootstrap process...");
-        publishAudit(null, email, com.redis.audit.entity.AuditActionType.IDENTITY_BOOTSTRAP_STARTED, com.redis.audit.entity.AuditStatus.SUCCESS, "Bootstrap Started");
-
-        // Validations
-        if (!email.matches("^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+$")) {
-            failBootstrap(email, "Invalid email format");
-        }
-
-        boolean isStrong = password.length() >= 12 &&
-                           password.matches(".*[A-Z].*") &&
-                           password.matches(".*[a-z].*") &&
-                           password.matches(".*[0-9].*") &&
-                           password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\",./<>?\\\\|].*");
-
-        if (!isStrong) {
-            failBootstrap(email, "Password does not meet complexity requirements (min 12 chars, upper, lower, digit, special)");
-        }
-
-        if (!phone.matches("^\\+?[1-9]\\d{1,14}$")) {
-            failBootstrap(email, "Invalid phone format");
-        }
-
-        if (userRepository.existsByEmail(email)) {
-            failBootstrap(email, "Duplicate email");
-        }
-
-        if (userRepository.existsByUsername(name)) {
-            failBootstrap(email, "Duplicate username");
-        }
 
         User superAdmin = User.builder()
                 .username(name)
@@ -129,11 +99,8 @@ public class DataInitializer implements CommandLineRunner {
                 .build();
 
         userRepository.save(superAdmin);
-
         markBootstrapCompleted();
-
         log.info("IDENTITY_BOOTSTRAP | Super Admin identity bootstrap completed successfully.");
-        publishAudit(superAdmin.getId(), email, com.redis.audit.entity.AuditActionType.IDENTITY_BOOTSTRAP_COMPLETED, com.redis.audit.entity.AuditStatus.SUCCESS, "Bootstrap Completed");
     }
 
     private boolean isBootstrapCompleted() {
@@ -144,7 +111,6 @@ public class DataInitializer implements CommandLineRunner {
             );
             return count != null && count > 0;
         } catch (Exception e) {
-            log.warn("IDENTITY_BOOTSTRAP | Failed to query system_settings table. It might not be created yet: {}", e.getMessage());
             return false;
         }
     }
@@ -154,49 +120,15 @@ public class DataInitializer implements CommandLineRunner {
             jdbcTemplate.update(
                     "INSERT INTO system_settings (setting_key, setting_value) VALUES ('bootstrap.completed', 'true')"
             );
-            log.info("IDENTITY_BOOTSTRAP | Bootstrap state permanently locked in system_settings table.");
         } catch (Exception e) {
-            log.error("IDENTITY_BOOTSTRAP | Failed to persist bootstrap state in system_settings: {}", e.getMessage());
-            throw new RuntimeException("Bootstrap state lock failed", e);
+            log.error("Failed to mark bootstrap completed: {}", e.getMessage());
         }
-    }
-
-    private void publishAudit(Long userId, String email, com.redis.audit.entity.AuditActionType action, com.redis.audit.entity.AuditStatus status, String desc) {
-        if (auditEventPublisher != null) {
-            try {
-                String version = "v1.0.0";
-                String host;
-                try {
-                    host = java.net.InetAddress.getLocalHost().getHostName();
-                } catch (Exception ex) {
-                    host = "unknown";
-                }
-                String env = System.getProperty("spring.profiles.active", "prod");
-                String fullDesc = String.format("%s | Version: %s | Host: %s | Env: %s", desc, version, host, env);
-                auditEventPublisher.publish(userId, email, action, status, com.redis.common.entity.ResourceType.USER, userId != null ? String.valueOf(userId) : "0", fullDesc);
-            } catch (Exception e) {
-                log.error("Failed to publish audit event for identity bootstrap: {}", e.getMessage());
-            }
-        }
-    }
-
-    private void failBootstrap(String email, String reason) {
-        publishAudit(null, email, com.redis.audit.entity.AuditActionType.IDENTITY_BOOTSTRAP_FAILED, com.redis.audit.entity.AuditStatus.FAILED, "Bootstrap Failed: " + reason);
-        throw new IllegalArgumentException("Identity Bootstrap failed: " + reason);
     }
 
     @Transactional
     public void initializeAlertRules() {
         seedAlertRule("DB_DOWN", "Database Connection Down", AlertSource.DATABASE, AlertSeverity.CRITICAL, 0.0, 10, 60);
         seedAlertRule("REDIS_DOWN", "Redis Cache Down", AlertSource.REDIS, AlertSeverity.HIGH, 0.0, 10, 60);
-        seedAlertRule("SCHEDULER_FAIL", "Scheduler Executions Failing", AlertSource.SCHEDULER, AlertSeverity.HIGH, 0.0, 30, 120);
-        seedAlertRule("NOTIF_FAIL_RATE", "Notification Failure Rate Exceeds Limit", AlertSource.NOTIFICATION, AlertSeverity.MEDIUM, 0.10, 30, 120);
-        seedAlertRule("PAYMENT_FAIL_RATE", "Payment Transaction Failure Rate Exceeds Limit", AlertSource.PAYMENT, AlertSeverity.CRITICAL, 0.05, 30, 120);
-        seedAlertRule("DISK_USAGE_HIGH", "Free disk space below limit", AlertSource.SYSTEM, AlertSeverity.HIGH, 85.0, 60, 300);
-        seedAlertRule("MEMORY_USAGE_HIGH", "JVM Heap utilization exceeds limit", AlertSource.SYSTEM, AlertSeverity.MEDIUM, 90.0, 30, 120);
-        seedAlertRule("FEATURE_FLAG_DISABLED", "Critical Feature Flag Disabled", AlertSource.SYSTEM, AlertSeverity.HIGH, 0.0, 30, 60);
-        seedAlertRule("CONFIG_CORRUPT", "Configuration Integrity Corrupted", AlertSource.SYSTEM, AlertSeverity.CRITICAL, 0.0, 30, 60);
-        seedAlertRule("DR_VALIDATION_FAILED", "Disaster Recovery Verification Failed", AlertSource.SYSTEM, AlertSeverity.CRITICAL, 0.0, 30, 60);
     }
 
     private void seedAlertRule(String code, String name, AlertSource source, AlertSeverity severity, double threshold, int interval, int cooldown) {
@@ -214,56 +146,123 @@ public class DataInitializer implements CommandLineRunner {
                     .build();
             rule.setUpdatedBy("SYSTEM");
             alertRuleRepository.save(rule);
-            log.info("Seeded default alert rule: {}", code);
         }
     }
 
-    private void initializeProducts() {
-        long existingCount = productRepository.count();
+    @Transactional
+    public void initializeCategoriesAndProducts() {
+        long prodCount = productRepository.count();
 
-        if (existingCount > 0) {
-            log.info("Database already has {} product(s) — skipping seed to prevent duplication", existingCount);
+        if (prodCount > 0) {
+            log.info("Database already has {} product(s) — skipping seed", prodCount);
             return;
         }
 
-        List<Product> sampleProducts = buildSampleProducts();
-        productRepository.saveAll(sampleProducts);
-        log.info("{} sample products seeded into database successfully", sampleProducts.size());
-    }
+        log.info("Seeding initial categories and products into database...");
 
-    private List<Product> buildSampleProducts() {
-        return List.of(
-                Product.builder()
-                        .name("Gaming Laptop - ASUS ROG")
-                        .price(new BigDecimal("85000.00"))
-                        .rating(new BigDecimal("4.5"))
-                        .stockQuantity(50)
-                        .build(),
-                Product.builder()
-                        .name("iPhone 15 Pro Max")
-                        .price(new BigDecimal("134900.00"))
-                        .rating(new BigDecimal("4.8"))
-                        .stockQuantity(200)
-                        .build(),
-                Product.builder()
-                        .name("Samsung Galaxy S24 Ultra")
-                        .price(new BigDecimal("129999.00"))
-                        .rating(new BigDecimal("4.7"))
-                        .stockQuantity(150)
-                        .build(),
-                Product.builder()
-                        .name("Sony WH-1000XM5 Headphones")
-                        .price(new BigDecimal("29990.00"))
-                        .rating(new BigDecimal("4.6"))
-                        .stockQuantity(100)
-                        .build(),
-                Product.builder()
-                        .name("Dell 27-inch 4K Monitor")
-                        .price(new BigDecimal("45000.00"))
-                        .rating(new BigDecimal("4.4"))
-                        .stockQuantity(75)
-                        .build()
+        // 1. Categories
+        Map<String, Category> categoryMap = new HashMap<>();
+
+        if (categoryRepository != null) {
+            List<Category> categoriesToSeed = List.of(
+                Category.builder().name("Smartphones & Tablets").description("Latest flagship smartphones, mobile devices and accessories").build(),
+                Category.builder().name("Computers & Laptops").description("High-performance gaming laptops, desktop PCs and peripherals").build(),
+                Category.builder().name("Audio & Accessories").description("Premium noise-canceling headphones, wireless earbuds and speakers").build(),
+                Category.builder().name("Electronics & Gadgets").description("High-tech devices, smart monitors, and entertainment systems").build(),
+                Category.builder().name("Home & Appliances").description("Modern smart home equipment, coffee makers and daily appliances").build()
+            );
+
+            for (Category cat : categoriesToSeed) {
+                Category saved = categoryRepository.findByNameIgnoreCase(cat.getName())
+                        .orElseGet(() -> categoryRepository.save(cat));
+                categoryMap.put(saved.getName(), saved);
+            }
+
+            log.info("{} categories seeded or verified.", categoryMap.size());
+        }
+
+        // 2. Products
+        Category smartphonesCat = categoryMap.get("Smartphones & Tablets");
+        Category computersCat = categoryMap.get("Computers & Laptops");
+        Category audioCat = categoryMap.get("Audio & Accessories");
+        Category electronicsCat = categoryMap.get("Electronics & Gadgets");
+        Category homeCat = categoryMap.get("Home & Appliances");
+
+        List<Product> sampleProducts = List.of(
+            Product.builder()
+                .name("iPhone 15 Pro Max (256GB)")
+                .price(new BigDecimal("134900.00"))
+                .rating(new BigDecimal("4.8"))
+                .stockQuantity(150)
+                .category(smartphonesCat)
+                .build(),
+            Product.builder()
+                .name("Samsung Galaxy S24 Ultra")
+                .price(new BigDecimal("129999.00"))
+                .rating(new BigDecimal("4.7"))
+                .stockQuantity(120)
+                .category(smartphonesCat)
+                .build(),
+            Product.builder()
+                .name("ASUS ROG Strix Gaming Laptop")
+                .price(new BigDecimal("145000.00"))
+                .rating(new BigDecimal("4.9"))
+                .stockQuantity(45)
+                .category(computersCat)
+                .build(),
+            Product.builder()
+                .name("Sony WH-1000XM5 ANC Headphones")
+                .price(new BigDecimal("29990.00"))
+                .rating(new BigDecimal("4.8"))
+                .stockQuantity(200)
+                .category(audioCat)
+                .build(),
+            Product.builder()
+                .name("Apple MacBook Air M3 (16GB)")
+                .price(new BigDecimal("114900.00"))
+                .rating(new BigDecimal("4.9"))
+                .stockQuantity(80)
+                .category(computersCat)
+                .build(),
+            Product.builder()
+                .name("Dell UltraSharp 27\" 4K USB-C Monitor")
+                .price(new BigDecimal("54990.00"))
+                .rating(new BigDecimal("4.6"))
+                .stockQuantity(60)
+                .category(electronicsCat)
+                .build(),
+            Product.builder()
+                .name("Bose QuietComfort Ultra Earbuds")
+                .price(new BigDecimal("24900.00"))
+                .rating(new BigDecimal("4.7"))
+                .stockQuantity(110)
+                .category(audioCat)
+                .build(),
+            Product.builder()
+                .name("iPad Air M2 (11-inch)")
+                .price(new BigDecimal("59900.00"))
+                .rating(new BigDecimal("4.8"))
+                .stockQuantity(95)
+                .category(smartphonesCat)
+                .build(),
+            Product.builder()
+                .name("Dyson V15 Detect Vacuum Cleaner")
+                .price(new BigDecimal("62900.00"))
+                .rating(new BigDecimal("4.6"))
+                .stockQuantity(30)
+                .category(homeCat)
+                .build(),
+            Product.builder()
+                .name("Nespresso Vertuo Pop Coffee Machine")
+                .price(new BigDecimal("16990.00"))
+                .rating(new BigDecimal("4.5"))
+                .stockQuantity(85)
+                .category(homeCat)
+                .build()
         );
+
+        productRepository.saveAll(sampleProducts);
+        log.info("{} sample products seeded successfully", sampleProducts.size());
     }
 
     protected String getEnv(String name) {
