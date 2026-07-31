@@ -66,10 +66,11 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Public auth endpoints
                 .requestMatchers("/api/auth/**").permitAll()
-                // Public product and category catalog endpoints for guest shoppers
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/products/**").permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/categories/**").permitAll()
+                // Public product and category catalog endpoints for guest shoppers & seeding
+                .requestMatchers("/api/products/**").permitAll()
+                .requestMatchers("/api/categories/**").permitAll()
                 .requestMatchers("/api/seed/**").permitAll()
+
 
 
                 // Swagger UI and API docs
