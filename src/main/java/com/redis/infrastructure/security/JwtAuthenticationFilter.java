@@ -133,11 +133,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // 6. Resume filter chain execution
             filterChain.doFilter(request, response);
 
-        } catch (JwtException ex) {
-            log.warn("JWT validation failed for URI {}: {} — delegating to security chain", request.getRequestURI(), ex.getMessage());
+        } catch (Exception ex) {
+            log.warn("JWT processing failed for URI {}: {} — delegating to filter chain", request.getRequestURI(), ex.getMessage());
             SecurityContextHolder.clearContext();
             filterChain.doFilter(request, response);
         }
+
 
     }
 }

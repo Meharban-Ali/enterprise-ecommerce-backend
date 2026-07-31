@@ -42,24 +42,12 @@ import org.springframework.security.access.expression.method.MethodSecurityExpre
 
 import java.util.List;
 
-import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
-
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity // Enables @PreAuthorize method-level security
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    @Bean
-    public WebSecurityCustomizer webSecurityCustomizer() {
-        return (web) -> web.ignoring().requestMatchers(
-            "/api/products", "/api/products/**", "/products", "/products/**", "/**/products/**",
-            "/api/categories", "/api/categories/**", "/categories", "/categories/**", "/**/categories/**",
-            "/api/auth/**", "/auth/**", "/**/auth/**",
-            "/api/seed", "/api/seed/**", "/seed/**", "/**/seed/**",
-            "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/actuator/health", "/api/health/**"
-        );
-    }
 
 
 
