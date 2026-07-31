@@ -1,5 +1,6 @@
--- V1__Initial_Schema.sql
+--- V1__Initial_Schema.sql
 -- Unified Database Schema for H2 (testing) and MySQL (production)
+
 
 -- 1. categories
 CREATE TABLE categories (
