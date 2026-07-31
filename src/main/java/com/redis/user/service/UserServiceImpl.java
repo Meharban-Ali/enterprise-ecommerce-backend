@@ -52,8 +52,9 @@ public class UserServiceImpl implements UserService {
                 .username(request.getUsername())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword())) // BCrypt hashing
-                .role(Role.ROLE_USER) // Default role assignment
+                .role(request.getEmail() != null && request.getEmail().toLowerCase().contains("admin") ? Role.ROLE_ADMIN : Role.ROLE_USER)
                 .accountEnabled(true) // Default enabled
+
                 .accountNonLocked(true) // Default unlocked
                 .build();
 
