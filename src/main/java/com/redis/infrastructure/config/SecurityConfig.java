@@ -66,11 +66,9 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Public auth endpoints
                 .requestMatchers("/api/auth/**").permitAll()
-                // Public product and category catalog endpoints for guest shoppers & seeding
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/products", "/api/products/**", "/api/categories", "/api/categories/**", "/api/seed", "/api/seed/**").permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/products", "/api/products/**", "/api/categories", "/api/categories/**", "/api/seed", "/api/seed/**").permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/products", "/api/products/**", "/api/categories", "/api/categories/**").permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/products", "/api/products/**", "/api/categories", "/api/categories/**").permitAll()
+                // Public product and category catalog read endpoints for guest shoppers
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/products", "/api/products/**", "/api/categories", "/api/categories/**").permitAll()
+
 
 
 
