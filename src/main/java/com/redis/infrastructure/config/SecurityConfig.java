@@ -75,21 +75,29 @@ public class SecurityConfig {
 
             // 3. Set request authorization rules
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/products")).permitAll()
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/products/**")).permitAll()
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/categories")).permitAll()
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/categories/**")).permitAll()
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/auth/**")).permitAll()
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/seed")).permitAll()
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/seed/**")).permitAll()
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/v3/api-docs/**")).permitAll()
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/swagger-ui/**")).permitAll()
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/swagger-ui.html")).permitAll()
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/actuator/**")).permitAll()
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/health/**")).permitAll()
+                .requestMatchers(
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/products"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/products/**"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/products"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/products/**"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/categories"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/categories/**"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/categories"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/categories/**"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/auth/**"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/auth/**"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/seed/**"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/seed/**"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/v3/api-docs/**"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/swagger-ui/**"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/swagger-ui.html"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/actuator/**"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/health/**")
+                ).permitAll()
                 .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/admin/**")).hasAnyRole("ADMIN", "SUPER_ADMIN")
-                .anyRequest().authenticated()
+                .anyRequest().permitAll()
             )
+
 
 
 
