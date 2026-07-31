@@ -65,11 +65,30 @@ public class ProductController {
                 .body(ApiResponse.success("Product created successfully", created));
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    //  READ — Single
-    // ═══════════════════════════════════════════════════════════════════════════
+    @GetMapping("/seed-now")
+    @Operation(summary = "Seed sample products and categories", description = "Populates initial products and categories if empty")
+    public ResponseEntity<ApiResponse<String>> seedProducts() {
+        try {
+            log.info("GET /api/products/seed-now — manual seed requested");
+            long seeded = productService.seedSampleData();
+            return ResponseEntity.ok(ApiResponse.success("Seeded " + seeded + " sample products successfully", "OK"));
+        } catch (Throwable e) {
+            log.error("SEED EXCEPTION: {}", e.getMessage(), e);
+            String cause = e.getCause() != null ? " | Cause: " + e.getCause().getMessage() : "";
+            return ResponseEntity.ok(ApiResponse.success("SEED_FAILED: " + e.getClass().getName() + " - " + e.getMessage() + cause, "ERROR"));
+        }
+    }
+
+    @GetMapping("/flush-cache")
+    @Operation(summary = "Evict all product cache", description = "Evicts all Redis product caches")
+    public ResponseEntity<ApiResponse<String>> flushCache() {
+        log.warn("GET /api/products/flush-cache — manual cache flush requested");
+        productService.clearProductCache();
+        return ResponseEntity.ok(ApiResponse.success("All product caches evicted successfully", "OK"));
+    }
 
     @GetMapping("/{id:\\d+}")
+
 
  // allowed for both users and admins
     @Operation(summary = "Get product by ID", description = "Fetches a product by ID with Redis cache support")
@@ -281,34 +300,7 @@ public class ProductController {
     }
 
     @GetMapping("/seed-now")
-    @Operation(summary = "Seed sample products and categories", description = "Populates initial products and categories if empty")
-    public ResponseEntity<ApiResponse<String>> seedProducts() {
-        try {
-            log.info("GET /api/products/seed-now — manual seed requested");
-            long seeded = productService.seedSampleData();
-            return ResponseEntity.ok(ApiResponse.success("Seeded " + seeded + " sample products successfully", "OK"));
-        } catch (Throwable e) {
-            log.error("SEED EXCEPTION: {}", e.getMessage(), e);
-            String cause = e.getCause() != null ? " | Cause: " + e.getCause().getMessage() : "";
-            return ResponseEntity.ok(ApiResponse.success("SEED_FAILED: " + e.getClass().getName() + " - " + e.getMessage() + cause, "ERROR"));
-        }
-    }
 
-
-
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    //  CACHE MANAGEMENT
-    // ═══════════════════════════════════════════════════════════════════════════
-
-
-    @GetMapping("/flush-cache")
-    @Operation(summary = "Evict all product cache", description = "Evicts all Redis product caches")
-    public ResponseEntity<ApiResponse<String>> flushCache() {
-        log.warn("GET /api/products/flush-cache — manual cache flush requested");
-        productService.clearProductCache();
-        return ResponseEntity.ok(ApiResponse.success("All product caches evicted successfully", "OK"));
-    }
 
     @DeleteMapping("/cache")
 
