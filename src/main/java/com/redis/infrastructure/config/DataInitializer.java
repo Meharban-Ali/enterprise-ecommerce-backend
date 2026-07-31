@@ -155,17 +155,21 @@ public class DataInitializer implements CommandLineRunner {
         Map<String, Category> categoryMap = new HashMap<>();
 
         List<Category> categoriesToSeed = List.of(
-            Category.builder().name("Smartphones & Tablets").description("Latest flagship smartphones, mobile devices and accessories").build(),
-            Category.builder().name("Computers & Laptops").description("High-performance gaming laptops, desktop PCs and peripherals").build(),
-            Category.builder().name("Audio & Accessories").description("Premium noise-canceling headphones, wireless earbuds and speakers").build(),
-            Category.builder().name("Electronics & Gadgets").description("High-tech devices, smart monitors, and entertainment systems").build(),
-            Category.builder().name("Home & Appliances").description("Modern smart home equipment, coffee makers and daily appliances").build()
+            Category.builder().name("Smartphones & Tablets").description("Latest flagship smartphones, mobile devices and accessories").createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
+            Category.builder().name("Computers & Laptops").description("High-performance gaming laptops, desktop PCs and peripherals").createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
+            Category.builder().name("Audio & Accessories").description("Premium noise-canceling headphones, wireless earbuds and speakers").createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
+            Category.builder().name("Electronics & Gadgets").description("High-tech devices, smart monitors, and entertainment systems").createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
+            Category.builder().name("Home & Appliances").description("Modern smart home equipment, coffee makers and daily appliances").createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build()
         );
 
         for (Category cat : categoriesToSeed) {
-            Category saved = categoryRepository.findByNameIgnoreCase(cat.getName())
-                    .orElseGet(() -> categoryRepository.save(cat));
-            categoryMap.put(saved.getName(), saved);
+            try {
+                Category saved = categoryRepository.findByNameIgnoreCase(cat.getName())
+                        .orElseGet(() -> categoryRepository.save(cat));
+                categoryMap.put(saved.getName(), saved);
+            } catch (Exception e) {
+                log.error("Failed to seed category {}: {}", cat.getName(), e.getMessage());
+            }
         }
 
         log.info("{} categories verified/seeded.", categoryMap.size());
@@ -184,6 +188,8 @@ public class DataInitializer implements CommandLineRunner {
                 .rating(new BigDecimal("4.8"))
                 .stockQuantity(150)
                 .category(catSmartphones)
+                .createdAt(java.time.LocalDateTime.now())
+                .updatedAt(java.time.LocalDateTime.now())
                 .build(),
             Product.builder()
                 .name("Samsung Galaxy S24 Ultra")
@@ -191,6 +197,8 @@ public class DataInitializer implements CommandLineRunner {
                 .rating(new BigDecimal("4.7"))
                 .stockQuantity(120)
                 .category(catSmartphones)
+                .createdAt(java.time.LocalDateTime.now())
+                .updatedAt(java.time.LocalDateTime.now())
                 .build(),
             Product.builder()
                 .name("ASUS ROG Strix Gaming Laptop")
@@ -198,6 +206,8 @@ public class DataInitializer implements CommandLineRunner {
                 .rating(new BigDecimal("4.9"))
                 .stockQuantity(45)
                 .category(catComputers)
+                .createdAt(java.time.LocalDateTime.now())
+                .updatedAt(java.time.LocalDateTime.now())
                 .build(),
             Product.builder()
                 .name("Sony WH-1000XM5 ANC Headphones")
@@ -205,6 +215,8 @@ public class DataInitializer implements CommandLineRunner {
                 .rating(new BigDecimal("4.8"))
                 .stockQuantity(200)
                 .category(catAudio)
+                .createdAt(java.time.LocalDateTime.now())
+                .updatedAt(java.time.LocalDateTime.now())
                 .build(),
             Product.builder()
                 .name("Apple MacBook Air M3 16GB")
@@ -212,6 +224,8 @@ public class DataInitializer implements CommandLineRunner {
                 .rating(new BigDecimal("4.9"))
                 .stockQuantity(80)
                 .category(catComputers)
+                .createdAt(java.time.LocalDateTime.now())
+                .updatedAt(java.time.LocalDateTime.now())
                 .build(),
             Product.builder()
                 .name("Dell UltraSharp 27 inch 4K USB-C Monitor")
@@ -219,6 +233,8 @@ public class DataInitializer implements CommandLineRunner {
                 .rating(new BigDecimal("4.6"))
                 .stockQuantity(60)
                 .category(catElectronics)
+                .createdAt(java.time.LocalDateTime.now())
+                .updatedAt(java.time.LocalDateTime.now())
                 .build(),
             Product.builder()
                 .name("Bose QuietComfort Ultra Earbuds")
@@ -226,6 +242,8 @@ public class DataInitializer implements CommandLineRunner {
                 .rating(new BigDecimal("4.7"))
                 .stockQuantity(110)
                 .category(catAudio)
+                .createdAt(java.time.LocalDateTime.now())
+                .updatedAt(java.time.LocalDateTime.now())
                 .build(),
             Product.builder()
                 .name("iPad Air M2 11-inch")
@@ -233,6 +251,8 @@ public class DataInitializer implements CommandLineRunner {
                 .rating(new BigDecimal("4.8"))
                 .stockQuantity(95)
                 .category(catSmartphones)
+                .createdAt(java.time.LocalDateTime.now())
+                .updatedAt(java.time.LocalDateTime.now())
                 .build(),
             Product.builder()
                 .name("Dyson V15 Detect Vacuum Cleaner")
@@ -240,6 +260,8 @@ public class DataInitializer implements CommandLineRunner {
                 .rating(new BigDecimal("4.6"))
                 .stockQuantity(30)
                 .category(catHome)
+                .createdAt(java.time.LocalDateTime.now())
+                .updatedAt(java.time.LocalDateTime.now())
                 .build(),
             Product.builder()
                 .name("Nespresso Vertuo Pop Coffee Machine")
@@ -247,18 +269,25 @@ public class DataInitializer implements CommandLineRunner {
                 .rating(new BigDecimal("4.5"))
                 .stockQuantity(85)
                 .category(catHome)
+                .createdAt(java.time.LocalDateTime.now())
+                .updatedAt(java.time.LocalDateTime.now())
                 .build()
         );
 
         int added = 0;
         for (Product prod : sampleProducts) {
-            if (productRepository.findByNameIgnoreCase(prod.getName()).isEmpty()) {
-                productRepository.save(prod);
-                added++;
+            try {
+                if (productRepository.findByNameIgnoreCase(prod.getName()).isEmpty()) {
+                    productRepository.save(prod);
+                    added++;
+                }
+            } catch (Exception e) {
+                log.error("Failed to seed product {}: {}", prod.getName(), e.getMessage());
             }
         }
         log.info("{} sample products seeded successfully", added);
     }
+
 
     protected String getEnv(String name) {
         return System.getenv(name);
