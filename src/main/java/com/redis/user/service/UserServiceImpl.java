@@ -57,7 +57,10 @@ public class UserServiceImpl implements UserService {
                 .accountNonLocked(true) // Default unlocked
                 .createdBy("system")
                 .updatedBy("system")
+                .createdAt(java.time.LocalDateTime.now())
+                .updatedAt(java.time.LocalDateTime.now())
                 .build();
+
 
 
         // 4. Persist entity
