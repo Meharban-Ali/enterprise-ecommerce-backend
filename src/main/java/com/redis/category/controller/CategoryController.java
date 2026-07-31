@@ -27,8 +27,9 @@ public class CategoryController {
     private final CategoryService categoryService;
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<ApiResponse<CategoryResponse>> createCategory(
+
 
 
             @Valid @RequestBody CategoryRequest request) {

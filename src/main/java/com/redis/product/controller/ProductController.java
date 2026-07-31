@@ -44,8 +44,9 @@ public class ProductController {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @Operation(summary = "Create a new product", description = "Creates a new product with validation")
+
 
 
     @ApiResponses(value = {
