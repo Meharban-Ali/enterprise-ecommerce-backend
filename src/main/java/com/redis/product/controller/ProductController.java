@@ -299,10 +299,8 @@ public class ProductController {
                 ApiResponse.success("Out of stock products", products));
     }
 
-    @GetMapping("/seed-now")
-
-
     @DeleteMapping("/cache")
+
 
     @PreAuthorize("hasRole('ADMIN')") // Admin-only: system maintenance
     @Operation(summary = "Clear all product cache", description = "Manually clears all product caches (Admin only)")

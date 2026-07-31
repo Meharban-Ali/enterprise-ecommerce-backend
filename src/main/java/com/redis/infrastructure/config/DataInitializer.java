@@ -42,8 +42,8 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     @org.springframework.transaction.annotation.Transactional
-    @org.springframework.context.event.EventListener(org.springframework.boot.context.event.ApplicationReadyEvent.class)
     public void run(String... args) {
+
 
 
         log.info("DataInitializer running: Checking system initial requirements...");
