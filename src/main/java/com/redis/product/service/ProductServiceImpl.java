@@ -429,21 +429,32 @@ public class ProductServiceImpl implements ProductService {
                 .orElseGet(() -> categoryRepository.save(Category.builder().name("Home & Appliances").description("Coffee makers and home appliances").build()));
 
         List<Product> products = List.of(
-            Product.builder().name("iPhone 15 Pro Max 256GB").price(new BigDecimal("134900.00")).rating(new BigDecimal("4.8")).stockQuantity(150).category(catSmartphones).build(),
-            Product.builder().name("Samsung Galaxy S24 Ultra").price(new BigDecimal("129999.00")).rating(new BigDecimal("4.7")).stockQuantity(120).category(catSmartphones).build(),
-            Product.builder().name("ASUS ROG Strix Gaming Laptop").price(new BigDecimal("145000.00")).rating(new BigDecimal("4.9")).stockQuantity(45).category(catComputers).build(),
-            Product.builder().name("Sony WH-1000XM5 ANC Headphones").price(new BigDecimal("29990.00")).rating(new BigDecimal("4.8")).stockQuantity(200).category(catAudio).build(),
-            Product.builder().name("Apple MacBook Air M3 16GB").price(new BigDecimal("114900.00")).rating(new BigDecimal("4.9")).stockQuantity(80).category(catComputers).build(),
-            Product.builder().name("Dell UltraSharp 27 inch 4K USB-C Monitor").price(new BigDecimal("54990.00")).rating(new BigDecimal("4.6")).stockQuantity(60).category(catElectronics).build(),
-            Product.builder().name("Bose QuietComfort Ultra Earbuds").price(new BigDecimal("24900.00")).rating(new BigDecimal("4.7")).stockQuantity(110).category(catAudio).build(),
-            Product.builder().name("iPad Air M2 11-inch").price(new BigDecimal("59900.00")).rating(new BigDecimal("4.8")).stockQuantity(95).category(catSmartphones).build(),
-            Product.builder().name("Dyson V15 Detect Vacuum Cleaner").price(new BigDecimal("62900.00")).rating(new BigDecimal("4.6")).stockQuantity(30).category(catHome).build(),
-            Product.builder().name("Nespresso Vertuo Pop Coffee Machine").price(new BigDecimal("16990.00")).rating(new BigDecimal("4.5")).stockQuantity(85).category(catHome).build()
+            Product.builder().name("iPhone 15 Pro Max 256GB").price(new BigDecimal("134900.00")).rating(new BigDecimal("4.8")).stockQuantity(150).category(catSmartphones).createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
+            Product.builder().name("Samsung Galaxy S24 Ultra").price(new BigDecimal("129999.00")).rating(new BigDecimal("4.7")).stockQuantity(120).category(catSmartphones).createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
+            Product.builder().name("ASUS ROG Strix Gaming Laptop").price(new BigDecimal("145000.00")).rating(new BigDecimal("4.9")).stockQuantity(45).category(catComputers).createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
+            Product.builder().name("Sony WH-1000XM5 ANC Headphones").price(new BigDecimal("29990.00")).rating(new BigDecimal("4.8")).stockQuantity(200).category(catAudio).createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
+            Product.builder().name("Apple MacBook Air M3 16GB").price(new BigDecimal("114900.00")).rating(new BigDecimal("4.9")).stockQuantity(80).category(catComputers).createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
+            Product.builder().name("Dell UltraSharp 27 inch 4K USB-C Monitor").price(new BigDecimal("54990.00")).rating(new BigDecimal("4.6")).stockQuantity(60).category(catElectronics).createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
+            Product.builder().name("Bose QuietComfort Ultra Earbuds").price(new BigDecimal("24900.00")).rating(new BigDecimal("4.7")).stockQuantity(110).category(catAudio).createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
+            Product.builder().name("iPad Air M2 11-inch").price(new BigDecimal("59900.00")).rating(new BigDecimal("4.8")).stockQuantity(95).category(catSmartphones).createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
+            Product.builder().name("Dyson V15 Detect Vacuum Cleaner").price(new BigDecimal("62900.00")).rating(new BigDecimal("4.6")).stockQuantity(30).category(catHome).createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build(),
+            Product.builder().name("Nespresso Vertuo Pop Coffee Machine").price(new BigDecimal("16990.00")).rating(new BigDecimal("4.5")).stockQuantity(85).category(catHome).createdAt(java.time.LocalDateTime.now()).updatedAt(java.time.LocalDateTime.now()).build()
         );
 
+        long savedCount = 0;
+        for (Product p : products) {
+            try {
+                if (productRepository.findByNameIgnoreCase(p.getName()).isEmpty()) {
+                    productRepository.save(p);
+                    savedCount++;
+                }
+            } catch (Exception e) {
+                log.error("Failed to seed product '{}': {}", p.getName(), e.getMessage(), e);
+            }
+        }
 
-        List<Product> saved = productRepository.saveAll(products);
-        log.info("Successfully seeded {} products into database", saved.size());
-        return saved.size();
+        log.info("Successfully seeded {} products into database", savedCount);
+        return savedCount;
     }
+
 }
