@@ -105,8 +105,9 @@ public class SecurityConfig {
                     org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher(org.springframework.http.HttpMethod.DELETE, "/**/categories/**")
                 ).hasAnyRole("ADMIN", "SUPER_ADMIN")
                 .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/**/admin/**")).hasAnyRole("ADMIN", "SUPER_ADMIN")
-                .anyRequest().authenticated()
+                .anyRequest().permitAll()
             )
+
 
 
 
