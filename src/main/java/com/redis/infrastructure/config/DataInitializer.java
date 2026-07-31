@@ -149,14 +149,7 @@ public class DataInitializer implements CommandLineRunner {
 
     @Transactional
     public void initializeCategoriesAndProducts() {
-        long prodCount = productRepository.count();
-
-        if (prodCount > 0) {
-            log.info("Database already has {} product(s) — skipping seed", prodCount);
-            return;
-        }
-
-        log.info("Seeding initial categories and products into database...");
+        log.info("Checking and seeding sample categories and products...");
 
         // 1. Categories
         Map<String, Category> categoryMap = new HashMap<>();
@@ -175,7 +168,7 @@ public class DataInitializer implements CommandLineRunner {
             categoryMap.put(saved.getName(), saved);
         }
 
-        log.info("{} categories seeded or verified.", categoryMap.size());
+        log.info("{} categories verified/seeded.", categoryMap.size());
 
         // 2. Products
         Category catSmartphones = categoryMap.get("Smartphones & Tablets");
@@ -257,8 +250,14 @@ public class DataInitializer implements CommandLineRunner {
                 .build()
         );
 
-        List<Product> saved = productRepository.saveAll(sampleProducts);
-        log.info("{} sample products seeded successfully", saved.size());
+        int added = 0;
+        for (Product prod : sampleProducts) {
+            if (productRepository.findByNameIgnoreCase(prod.getName()).isEmpty()) {
+                productRepository.save(prod);
+                added++;
+            }
+        }
+        log.info("{} sample products seeded successfully", added);
     }
 
     protected String getEnv(String name) {
