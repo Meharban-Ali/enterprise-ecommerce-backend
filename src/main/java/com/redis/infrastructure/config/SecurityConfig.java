@@ -71,25 +71,11 @@ public class SecurityConfig {
             // 2. Disable CSRF (stateless JWT architecture)
             .csrf(AbstractHttpConfigurer::disable)
 
-            // 3. Set request authorization rules
+            // 3. Set request authorization rules (all HTTP requests permitted at filter layer; method-level @PreAuthorize enforces RBAC)
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/auth/**"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/seed"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/seed/**"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/products"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/products/**"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/categories"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/categories/**"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/v3/api-docs/**"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/swagger-ui/**"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/swagger-ui.html"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/actuator/**"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/health/**")
-                ).permitAll()
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/admin/**")).hasAnyRole("ADMIN", "SUPER_ADMIN")
                 .anyRequest().permitAll()
             )
+
 
 
 
