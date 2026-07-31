@@ -69,7 +69,12 @@ public class AuditEventListener {
                     .httpStatus(event.getHttpStatus())
                     .executionTimeMs(event.getExecutionTimeMs())
                     .entityVersion(event.getEntityVersion())
+                    .createdBy("system")
+                    .updatedBy("system")
+                    .createdAt(java.time.LocalDateTime.now())
+                    .updatedAt(java.time.LocalDateTime.now())
                     .build();
+
 
             auditLogRepository.save(auditLog);
 
