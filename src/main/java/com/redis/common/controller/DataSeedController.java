@@ -26,8 +26,10 @@ public class DataSeedController {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
 
+    @org.springframework.web.bind.annotation.GetMapping
     @PostMapping
     public ResponseEntity<ApiResponse<String>> seedData() {
+
         log.info("API POST /api/seed — Force data seeding requested");
 
         // 1. Seed Categories
