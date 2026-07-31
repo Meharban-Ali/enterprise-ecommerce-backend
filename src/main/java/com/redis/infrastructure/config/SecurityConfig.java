@@ -41,6 +41,8 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity // Enables @PreAuthorize method-level security
+
+
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -66,8 +68,16 @@ public class SecurityConfig {
 
             // 3. Set request authorization rules
             .authorizeHttpRequests(auth -> auth
-                .anyRequest().permitAll()
+                .requestMatchers("/api/auth/**", "/api/seed", "/api/seed/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/products", "/api/products/**", "/api/categories", "/api/categories/**").permitAll()
+                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/actuator/health", "/api/health/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/products/**", "/api/categories/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/products/**", "/api/categories/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/products/**", "/api/categories/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .anyRequest().authenticated()
             )
+
 
 
 
