@@ -27,9 +27,8 @@ public class CategoryController {
     private final CategoryService categoryService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-
     public ResponseEntity<ApiResponse<CategoryResponse>> createCategory(
+
             @Valid @RequestBody CategoryRequest request) {
         log.info("API POST /api/categories — Create category: {}", request.getName());
         CategoryResponse response = categoryService.createCategory(request);

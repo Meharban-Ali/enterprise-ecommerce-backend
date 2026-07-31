@@ -44,9 +44,8 @@ public class ProductController {
     // ═══════════════════════════════════════════════════════════════════════════
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
- // restricted to admins
-    @Operation(summary = "Create a new product", description = "Creates a new product with validation (Admin only)")
+    @Operation(summary = "Create a new product", description = "Creates a new product with validation")
+
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Product created successfully"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid input"),
