@@ -28,8 +28,9 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
             HttpServletResponse response,
             AuthenticationException authException) throws IOException, ServletException {
         
-        log.warn("Unauthorized access attempt on URI: {} — Exception: {}", 
-                request.getRequestURI(), authException.getMessage());
+        log.warn("Unauthorized access attempt on URI: {} — Exception: {} | Cause: {}", 
+                request.getRequestURI(), authException.getMessage(), authException.getCause(), authException);
+
 
         // 1. Set response headers
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
