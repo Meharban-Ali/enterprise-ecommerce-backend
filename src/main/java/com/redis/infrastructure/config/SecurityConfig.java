@@ -64,8 +64,14 @@ public class SecurityConfig {
 
             // 3. Set request authorization rules
             .authorizeHttpRequests(auth -> auth
-                .anyRequest().permitAll()
+                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/api/seed", "/api/seed/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/products", "/api/products/**", "/api/categories", "/api/categories/**").permitAll()
+                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/actuator/health", "/api/health/**").permitAll()
+                .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .anyRequest().authenticated()
             )
+
 
 
             // 4. Stateless session management (no HTTP session created or used)
