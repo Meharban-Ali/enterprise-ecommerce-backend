@@ -49,7 +49,12 @@ public class CategoryServiceImpl implements CategoryService {
         Category category = Category.builder()
                 .name(request.getName().trim())
                 .description(request.getDescription())
+                .createdBy("system")
+                .updatedBy("system")
+                .createdAt(java.time.LocalDateTime.now())
+                .updatedAt(java.time.LocalDateTime.now())
                 .build();
+
 
         Category saved = categoryRepository.save(category);
         log.info("Category created — id: {}", saved.getId());
