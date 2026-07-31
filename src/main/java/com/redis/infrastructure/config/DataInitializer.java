@@ -40,8 +40,10 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired(required = false)
     private com.redis.audit.event.AuditEventPublisher auditEventPublisher;
 
+    // Railway deployment trigger for clean container build
     @Override
     @org.springframework.transaction.annotation.Transactional
+
     public void run(String... args) {
 
 
