@@ -73,41 +73,52 @@ public class DataInitializer implements CommandLineRunner {
 
     @Transactional
     public void initializeSuperAdmin() {
-        if (isBootstrapCompleted() || userRepository.existsByRole(Role.ROLE_SUPER_ADMIN)) {
-            log.debug("IDENTITY_BOOTSTRAP | Bootstrap lock active or SUPER_ADMIN role already exists. Skipping bootstrap.");
-            return;
+        String name = getEnv("SUPER_ADMIN_NAME") != null ? getEnv("SUPER_ADMIN_NAME") : "SuperAdmin";
+        String email = getEnv("SUPER_ADMIN_EMAIL") != null ? getEnv("SUPER_ADMIN_EMAIL") : "superadmin@easyshop.com";
+        String password = getEnv("SUPER_ADMIN_PASSWORD") != null ? getEnv("SUPER_ADMIN_PASSWORD") : "SuperAdmin123!";
+        String phone = getEnv("SUPER_ADMIN_PHONE") != null ? getEnv("SUPER_ADMIN_PHONE") : "+1234567890";
+
+        if (!userRepository.existsByEmail(email)) {
+            log.info("IDENTITY_BOOTSTRAP | Seeding default Super Admin account: {}", email);
+            User superAdmin = User.builder()
+                    .username(name)
+                    .email(email)
+                    .password(passwordEncoder.encode(password))
+                    .phone(phone)
+                    .role(Role.ROLE_SUPER_ADMIN)
+                    .accountEnabled(true)
+                    .accountNonLocked(true)
+                    .passwordChangeRequired(false)
+                    .createdBy("system")
+                    .updatedBy("system")
+                    .createdAt(java.time.LocalDateTime.now())
+                    .updatedAt(java.time.LocalDateTime.now())
+                    .build();
+            userRepository.save(superAdmin);
         }
 
-        String name = getEnv("SUPER_ADMIN_NAME");
-        String email = getEnv("SUPER_ADMIN_EMAIL");
-        String password = getEnv("SUPER_ADMIN_PASSWORD");
-        String phone = getEnv("SUPER_ADMIN_PHONE");
-
-        if (name == null || name.isBlank() ||
-            email == null || email.isBlank() ||
-            password == null || password.isBlank() ||
-            phone == null || phone.isBlank()) {
-            log.warn("IDENTITY_BOOTSTRAP | Skipping bootstrap - super admin credentials environment variables not set.");
-            return;
+        // Seed default ADMIN account
+        String adminEmail = "admin@easyshop.com";
+        if (!userRepository.existsByEmail(adminEmail)) {
+            log.info("IDENTITY_BOOTSTRAP | Seeding default Admin account: {}", adminEmail);
+            User admin = User.builder()
+                    .username("Admin")
+                    .email(adminEmail)
+                    .password(passwordEncoder.encode("AdminPassword123!"))
+                    .phone("+0987654321")
+                    .role(Role.ROLE_ADMIN)
+                    .accountEnabled(true)
+                    .accountNonLocked(true)
+                    .passwordChangeRequired(false)
+                    .createdBy("system")
+                    .updatedBy("system")
+                    .createdAt(java.time.LocalDateTime.now())
+                    .updatedAt(java.time.LocalDateTime.now())
+                    .build();
+            userRepository.save(admin);
         }
-
-        log.info("IDENTITY_BOOTSTRAP | Starting secure Super Admin identity bootstrap process...");
-
-        User superAdmin = User.builder()
-                .username(name)
-                .email(email)
-                .password(passwordEncoder.encode(password))
-                .phone(phone)
-                .role(Role.ROLE_SUPER_ADMIN)
-                .accountEnabled(true)
-                .accountNonLocked(true)
-                .passwordChangeRequired(true)
-                .build();
-
-        userRepository.save(superAdmin);
-        markBootstrapCompleted();
-        log.info("IDENTITY_BOOTSTRAP | Super Admin identity bootstrap completed successfully.");
     }
+
 
     private boolean isBootstrapCompleted() {
         try {
