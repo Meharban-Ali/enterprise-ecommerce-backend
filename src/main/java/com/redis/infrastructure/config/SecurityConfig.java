@@ -71,17 +71,11 @@ public class SecurityConfig {
             // 2. Disable CSRF (stateless JWT architecture)
             .csrf(AbstractHttpConfigurer::disable)
 
-            // 3. Set request authorization rules
+            // 3. Set request authorization rules (public guest browsing permitted; method-level @PreAuthorize protects mutations)
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**", "/api/seed", "/api/seed/**").permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/products", "/api/products/**", "/api/categories", "/api/categories/**", "/api/categories/list").permitAll()
-                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/actuator/**", "/api/health/**").permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/products/**", "/api/categories/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/products/**", "/api/categories/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/products/**", "/api/categories/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
-                .anyRequest().authenticated()
+                .anyRequest().permitAll()
             )
+
 
 
 
