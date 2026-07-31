@@ -54,91 +54,47 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain) throws ServletException, IOException {
 
         final String authHeader = request.getHeader("Authorization");
-        final String jwt;
-        final String userEmail;
 
-        // 1. If authorization header is missing or not a Bearer token, skip and delegate
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        try {
-            // 2. Extract token and subject email
-            jwt = authHeader.substring(7).trim();
-            if (jwt.isEmpty() || "null".equalsIgnoreCase(jwt) || "undefined".equalsIgnoreCase(jwt)) {
-                filterChain.doFilter(request, response);
-                return;
-            }
-            userEmail = jwtService.extractEmail(jwt);
-
-
-            // Check if token is blacklisted in Redis
-            RedisTemplate<String, Object> redisTemplate = redisTemplateProvider.getIfAvailable();
-            if (redisTemplate != null) {
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            final String jwt = authHeader.substring(7).trim();
+            if (!jwt.isEmpty() && !"null".equalsIgnoreCase(jwt) && !"undefined".equalsIgnoreCase(jwt)) {
                 try {
-                    if (Boolean.TRUE.equals(redisTemplate.hasKey("blacklist::" + jwt))) {
+                    // Check if token is blacklisted in Redis
+                    RedisTemplate<String, Object> redisTemplate = redisTemplateProvider.getIfAvailable();
+                    if (redisTemplate != null && Boolean.TRUE.equals(redisTemplate.hasKey("blacklist::" + jwt))) {
                         log.warn("Access attempt with blacklisted JWT token");
-                        throw new io.jsonwebtoken.security.SignatureException("Token is blacklisted");
+                        SecurityContextHolder.clearContext();
+                        filterChain.doFilter(request, response);
+                        return;
                     }
-                } catch (io.jsonwebtoken.security.SignatureException ex) {
-                    throw ex; // Re-throw the explicit blacklist signature exception
-                } catch (Exception e) {
-                    log.warn("Redis check failed during blacklist check for token. Proceeding with claims validation: {}", e.getMessage());
-                }
-            }
 
-            // 3. If email extracted and security context has no active session, authenticate
-            if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
+                    final String userEmail = jwtService.extractEmail(jwt);
+                    if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                        UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
 
-                // 4. Validate token authenticity
-                if (jwtService.isTokenValid(jwt, userDetails)) {
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities()
-                    );
-                    
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    
-                    // 5. Register authentication in SecurityContext Holder
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                    log.debug("User authenticated successfully via JWT: {}", userEmail);
+                        if (jwtService.isTokenValid(jwt, userDetails)) {
+                            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                                    userDetails,
+                                    null,
+                                    userDetails.getAuthorities()
+                            );
+                            authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                            SecurityContextHolder.getContext().setAuthentication(authToken);
 
-                    // First-login password change required flow
-                    if (userDetails instanceof User) {
-                        User user = (User) userDetails;
-                        String uri = request.getRequestURI();
-                        if (user.isPasswordChangeRequired() && !uri.endsWith("/api/auth/reset-password") && !uri.endsWith("/api/auth/logout")) {
-                            log.warn("Access denied for user {}: password change required", userEmail);
-                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                            response.setContentType("application/json");
-                            response.getWriter().write("{\"message\":\"Password change required on first login\",\"code\":\"PASSWORD_CHANGE_REQUIRED\"}");
-                            response.getWriter().flush();
-                            return;
+                            UserSessionService sessionService = userSessionServiceProvider.getIfAvailable();
+                            if (sessionService != null && userDetails instanceof User) {
+                                sessionService.updateSessionActivity((User) userDetails);
+                            }
                         }
                     }
-
-                    // Update user session activity in DB and Redis
-                    if (userDetails instanceof User) {
-                        UserSessionService sessionService = userSessionServiceProvider.getIfAvailable();
-                        if (sessionService != null) {
-                            sessionService.updateSessionActivity((User) userDetails);
-                        }
-                    }
+                } catch (Exception ex) {
+                    log.warn("JWT validation failed for URI {}: {} — proceeding unauthenticated", request.getRequestURI(), ex.getMessage());
+                    SecurityContextHolder.clearContext();
                 }
             }
-            
-            // 6. Resume filter chain execution
-            filterChain.doFilter(request, response);
-
-        } catch (Exception ex) {
-            log.warn("JWT processing failed for URI {}: {} — delegating to filter chain", request.getRequestURI(), ex.getMessage());
-            SecurityContextHolder.clearContext();
-            filterChain.doFilter(request, response);
         }
 
-
+        filterChain.doFilter(request, response);
     }
+ }
 }
