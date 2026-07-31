@@ -72,23 +72,16 @@ public class SecurityConfig {
 
             // 3. Set request authorization rules
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/auth/**"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/seed"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/seed/**"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/products"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/products/**"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/categories"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/categories/**"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/v3/api-docs/**"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/swagger-ui/**"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/swagger-ui.html"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/actuator/health"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/health/**")
-                ).permitAll()
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/admin/**")).hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers("/api/auth/**", "/api/seed", "/api/seed/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/products", "/api/products/**", "/api/categories", "/api/categories/**", "/api/categories/list").permitAll()
+                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/actuator/health", "/api/health/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/products/**", "/api/categories/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/products/**", "/api/categories/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/products/**", "/api/categories/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
                 .anyRequest().authenticated()
             )
+
 
 
 
