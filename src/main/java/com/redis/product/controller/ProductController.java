@@ -279,11 +279,16 @@ public class ProductController {
     @GetMapping("/seed-now")
     @Operation(summary = "Seed sample products and categories", description = "Populates initial products and categories if empty")
     public ResponseEntity<ApiResponse<String>> seedProducts() {
-
-        log.info("GET /api/products/seed-now — manual seed requested");
-        long seeded = productService.seedSampleData();
-        return ResponseEntity.ok(ApiResponse.success("Seeded " + seeded + " sample products successfully", "OK"));
+        try {
+            log.info("GET /api/products/seed-now — manual seed requested");
+            long seeded = productService.seedSampleData();
+            return ResponseEntity.ok(ApiResponse.success("Seeded " + seeded + " sample products successfully", "OK"));
+        } catch (Exception e) {
+            log.error("SEED EXCEPTION: {}", e.getMessage(), e);
+            return ResponseEntity.status(500).body(ApiResponse.error("Seed error: " + e.getClass().getSimpleName() + " - " + e.getMessage(), "SEED_ERROR"));
+        }
     }
+
 
 
     // ═══════════════════════════════════════════════════════════════════════════
