@@ -45,7 +45,8 @@ public abstract class AuditableEntity extends BaseEntity {
     @lombok.Builder.Default
     private String updatedBy = "system";
 
-    @Version
+    @Column(name = "version")
     @lombok.Builder.Default
     private Integer version = 0;
+
 }
