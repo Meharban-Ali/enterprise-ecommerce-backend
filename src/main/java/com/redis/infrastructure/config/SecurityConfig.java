@@ -72,19 +72,42 @@ public class SecurityConfig {
 
             // 3. Set request authorization rules
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/auth/**")).permitAll()
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/seed"), org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/seed/**")).permitAll()
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher(org.springframework.http.HttpMethod.GET, "/api/products")).permitAll()
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher(org.springframework.http.HttpMethod.GET, "/api/products/**")).permitAll()
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher(org.springframework.http.HttpMethod.GET, "/api/categories")).permitAll()
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher(org.springframework.http.HttpMethod.GET, "/api/categories/**")).permitAll()
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/v3/api-docs/**"), org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/swagger-ui/**"), org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/swagger-ui.html"), org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/actuator/health"), org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/health/**")).permitAll()
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher(org.springframework.http.HttpMethod.POST, "/api/products/**"), org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher(org.springframework.http.HttpMethod.POST, "/api/categories/**")).hasAnyRole("ADMIN", "SUPER_ADMIN")
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher(org.springframework.http.HttpMethod.PUT, "/api/products/**"), org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher(org.springframework.http.HttpMethod.PUT, "/api/categories/**")).hasAnyRole("ADMIN", "SUPER_ADMIN")
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher(org.springframework.http.HttpMethod.DELETE, "/api/products/**"), org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher(org.springframework.http.HttpMethod.DELETE, "/api/categories/**")).hasAnyRole("ADMIN", "SUPER_ADMIN")
-                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/admin/**")).hasAnyRole("ADMIN", "SUPER_ADMIN")
-                .anyRequest().permitAll()
+                .requestMatchers(
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/auth/**"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/**/auth/**"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/seed"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/seed/**"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/**/seed/**")
+                ).permitAll()
+                .requestMatchers(
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher(org.springframework.http.HttpMethod.GET, "/api/products"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher(org.springframework.http.HttpMethod.GET, "/api/products/**"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher(org.springframework.http.HttpMethod.GET, "/**/products"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher(org.springframework.http.HttpMethod.GET, "/**/products/**"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher(org.springframework.http.HttpMethod.GET, "/api/categories"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher(org.springframework.http.HttpMethod.GET, "/api/categories/**"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher(org.springframework.http.HttpMethod.GET, "/**/categories"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher(org.springframework.http.HttpMethod.GET, "/**/categories/**")
+                ).permitAll()
+                .requestMatchers(
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/v3/api-docs/**"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/swagger-ui/**"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/swagger-ui.html"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/actuator/health"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/health/**")
+                ).permitAll()
+                .requestMatchers(
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher(org.springframework.http.HttpMethod.POST, "/**/products/**"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher(org.springframework.http.HttpMethod.POST, "/**/categories/**"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher(org.springframework.http.HttpMethod.PUT, "/**/products/**"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher(org.springframework.http.HttpMethod.PUT, "/**/categories/**"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher(org.springframework.http.HttpMethod.DELETE, "/**/products/**"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher(org.springframework.http.HttpMethod.DELETE, "/**/categories/**")
+                ).hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/**/admin/**")).hasAnyRole("ADMIN", "SUPER_ADMIN")
+                .anyRequest().authenticated()
             )
+
 
 
 
