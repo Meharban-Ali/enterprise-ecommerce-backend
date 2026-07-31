@@ -1,5 +1,6 @@
 package com.redis.infrastructure.security;
 
+
 import com.redis.security.service.ApiKeyService;
 import com.redis.infrastructure.config.ApiSecurityProperties;
 
@@ -38,6 +39,7 @@ public class ApiKeyAuthenticationFilter implements Filter {
 
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private com.redis.security.service.ApiKeyService apiKeyService;
+
 
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     private RevokedApiKeyBloomFilter bloomFilter;
