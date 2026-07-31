@@ -298,7 +298,16 @@ public class ProductController {
     // ═══════════════════════════════════════════════════════════════════════════
 
 
+    @GetMapping("/flush-cache")
+    @Operation(summary = "Evict all product cache", description = "Evicts all Redis product caches")
+    public ResponseEntity<ApiResponse<String>> flushCache() {
+        log.warn("GET /api/products/flush-cache — manual cache flush requested");
+        productService.clearProductCache();
+        return ResponseEntity.ok(ApiResponse.success("All product caches evicted successfully", "OK"));
+    }
+
     @DeleteMapping("/cache")
+
     @PreAuthorize("hasRole('ADMIN')") // Admin-only: system maintenance
     @Operation(summary = "Clear all product cache", description = "Manually clears all product caches (Admin only)")
     public ResponseEntity<ApiResponse<Void>> clearCache() {
