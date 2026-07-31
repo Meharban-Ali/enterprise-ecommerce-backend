@@ -37,7 +37,12 @@ public class UserSessionServiceImpl implements UserSessionService {
                         .userId(user.getId())
                         .username(user.getActualUsername())
                         .email(user.getEmail())
+                        .createdBy("system")
+                        .updatedBy("system")
+                        .createdAt(java.time.LocalDateTime.now())
+                        .updatedAt(java.time.LocalDateTime.now())
                         .build());
+
 
         session.setLoginTime(now);
         session.setLogoutTime(null);
@@ -102,7 +107,12 @@ public class UserSessionServiceImpl implements UserSessionService {
                         .userId(userId)
                         .username(user.getActualUsername())
                         .email(user.getEmail())
+                        .createdBy("system")
+                        .updatedBy("system")
+                        .createdAt(java.time.LocalDateTime.now())
+                        .updatedAt(java.time.LocalDateTime.now())
                         .build());
+
 
         session.setLastActivity(now);
         session.setStatus("ONLINE");
