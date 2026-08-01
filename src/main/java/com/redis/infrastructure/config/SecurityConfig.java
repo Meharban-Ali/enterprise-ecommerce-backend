@@ -75,31 +75,10 @@ public class SecurityConfig {
 
             // 3. Set request authorization rules
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/products"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/products/**"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/products"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/products/**"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/categories"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/categories/**"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/categories"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/categories/**"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/auth/**"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/auth/**"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/seed/**"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/seed/**"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/v3/api-docs/**"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/swagger-ui/**"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/swagger-ui.html"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/actuator/**"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/health/**"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/error"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/error/**")
-                ).permitAll()
-
                 .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/admin/**")).hasAnyRole("ADMIN", "SUPER_ADMIN")
                 .anyRequest().permitAll()
             )
+
 
 
 
