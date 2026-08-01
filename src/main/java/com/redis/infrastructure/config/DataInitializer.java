@@ -2,6 +2,8 @@ package com.redis.infrastructure.config;
 
 
 
+
+
 import com.redis.category.entity.Category;
 import com.redis.category.repository.CategoryRepository;
 import com.redis.product.entity.Product;
