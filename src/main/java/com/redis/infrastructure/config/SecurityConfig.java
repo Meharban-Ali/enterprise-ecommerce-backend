@@ -92,8 +92,11 @@ public class SecurityConfig {
                     org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/swagger-ui/**"),
                     org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/swagger-ui.html"),
                     org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/actuator/**"),
-                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/health/**")
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/health/**"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/error"),
+                    org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/error/**")
                 ).permitAll()
+
                 .requestMatchers(org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher("/api/admin/**")).hasAnyRole("ADMIN", "SUPER_ADMIN")
                 .anyRequest().permitAll()
             )
