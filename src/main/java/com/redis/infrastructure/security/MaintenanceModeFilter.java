@@ -19,8 +19,8 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 
 @Slf4j
-@Component
 public class MaintenanceModeFilter implements Filter {
+
 
     @Autowired(required = false)
     private PlatformReliabilityProperties properties;

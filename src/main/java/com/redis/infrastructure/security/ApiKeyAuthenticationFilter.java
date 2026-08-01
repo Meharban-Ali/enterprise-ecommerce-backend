@@ -26,8 +26,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
-@Component
 public class ApiKeyAuthenticationFilter implements Filter {
+
 
     public static final String API_KEY_HEADER = "X-API-Key";
     

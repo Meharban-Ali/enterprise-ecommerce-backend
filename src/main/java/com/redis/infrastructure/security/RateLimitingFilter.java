@@ -23,8 +23,8 @@ import java.io.IOException;
 import java.util.Map;
 
 @Slf4j
-@Component
 public class RateLimitingFilter extends OncePerRequestFilter {
+
 
     @Autowired(required = false)
     private RateLimitService rateLimitService;

@@ -55,16 +55,34 @@ public class SecurityConfig {
 
 
 
-    private final JwtAuthenticationFilter jwtAuthFilter;
-    private final ApiKeyAuthenticationFilter apiKeyAuthFilter;
-    private final RateLimitingFilter rateLimitingFilter;
     private final UserDetailsService userDetailsService;
     private final CustomAuthenticationEntryPoint authenticationEntryPoint;
     private final CustomAccessDeniedHandler accessDeniedHandler;
     private final CorsProperties corsProperties;
+    private final com.redis.auth.service.JwtService jwtService;
+    private final org.springframework.beans.factory.ObjectProvider<org.springframework.data.redis.core.RedisTemplate<String, Object>> redisTemplateProvider;
+    private final org.springframework.beans.factory.ObjectProvider<com.redis.user.service.UserSessionService> userSessionServiceProvider;
 
-    @org.springframework.beans.factory.annotation.Autowired(required = false)
-    private MaintenanceModeFilter maintenanceModeFilter;
+    @Bean
+    public JwtAuthenticationFilter jwtAuthenticationFilter() {
+        return new JwtAuthenticationFilter(jwtService, userDetailsService, redisTemplateProvider, userSessionServiceProvider);
+    }
+
+    @Bean
+    public ApiKeyAuthenticationFilter apiKeyAuthenticationFilter() {
+        return new ApiKeyAuthenticationFilter();
+    }
+
+    @Bean
+    public RateLimitingFilter rateLimitingFilter() {
+        return new RateLimitingFilter();
+    }
+
+    @Bean
+    public MaintenanceModeFilter maintenanceModeFilter() {
+        return new MaintenanceModeFilter();
+    }
+
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -143,13 +161,11 @@ public class SecurityConfig {
             })
 
             // 8. Insert Filters
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-            .addFilterBefore(apiKeyAuthFilter, JwtAuthenticationFilter.class)
-            .addFilterAfter(rateLimitingFilter, JwtAuthenticationFilter.class);
+            .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(apiKeyAuthenticationFilter(), JwtAuthenticationFilter.class)
+            .addFilterAfter(rateLimitingFilter(), JwtAuthenticationFilter.class)
+            .addFilterAfter(maintenanceModeFilter(), JwtAuthenticationFilter.class);
 
-        if (maintenanceModeFilter != null) {
-            http.addFilterAfter(maintenanceModeFilter, JwtAuthenticationFilter.class);
-        }
 
         return http.build();
     }
