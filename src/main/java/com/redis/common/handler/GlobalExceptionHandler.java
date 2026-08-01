@@ -237,10 +237,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
         log.error("Unhandled exception caught: ", ex);
-        String causeMsg = ex.getCause() != null ? " | Cause: " + ex.getCause().getMessage() : "";
+        String message = ex.getClass().getSimpleName() + ": " + ex.getMessage() + (ex.getCause() != null ? " (Cause: " + ex.getCause().getMessage() + ")" : "");
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error("EX: " + ex.getClass().getName() + " - " + ex.getMessage() + causeMsg, "INTERNAL_SERVER_ERROR"));
+                .body(ApiResponse.error(message, "INTERNAL_SERVER_ERROR"));
     }
+
 
 }
